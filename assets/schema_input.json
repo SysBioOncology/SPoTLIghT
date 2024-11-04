@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "$id": "https://raw.githubusercontent.com/SysBioOncology/spotlight_docker/master/assets/schema_input.json",
-  "title": "SysBioOncology/spotlight_docker pipeline - params.input schema",
+  "$id": "https://raw.githubusercontent.com/SysBioOncology/SPoTLIghT/master/assets/schema_input.json",
+  "title": "SysBioOncology/SPoTLIghT pipeline - params.input schema",
   "description": "Schema for the file provided with params.input",
   "type": "array",
   "items": {

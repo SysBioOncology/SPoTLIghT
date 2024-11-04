@@ -2,14 +2,10 @@
 import argparse
 import multiprocessing
 import os
-import sys
 import time
 from argparse import ArgumentParser as AP
 from os.path import abspath
 from pathlib import Path
-
-# TEMPORARY
-sys.path.append("/cluster/projects/gaitigroup/Users/Joan/spotlight_docker/lib")
 
 import joblib
 import model.preprocessing as preprocessing

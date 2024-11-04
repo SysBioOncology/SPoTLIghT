@@ -15,11 +15,6 @@ parser$add_argument("--probesets", type = "character", default = "assets/mcp_cou
 parser$add_argument("--genes", type = "character", default = "assets/mcp_counter/genes.txt", help = "Path to genes.txt")
 args <- parser$parse_args()
 
-# args <- list()
-# args$tpm_path <- "output_test_tcga/create/tpm.txt"
-# args$probesets <- "assets/mcp_counter/probesets.txt"
-# args$genes <- "assets/mcp_counter/genes.txt"
-# args$output_dir <- "/Users/joankant/Desktop/gaitigroup/Users/Joan/spotlight_docker/output_test_tcga/immunedeconv"
 
 
 # # Set up logging

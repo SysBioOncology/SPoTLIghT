@@ -2,11 +2,14 @@
 
 The SPoTLIghT pipeline consists of several modules: 
 
-1. Extracting histopathological features (`extracthistopatho`).
-2. Deconvolution of bulkRNAseq data (`deconvbulk`).
-3. Building a multi-task cell type model to predict cell type abundances on a tile-level (`buildmodel`).
-4. Predicting tile-level cell type abundances using the multi-task models (`predicttiles`).
-5. Compute spatial features using the tile-level cell type abundances (`computespatial`).
+- [SPoTLIghT Modules](#spotlight-modules)
+  - [Extracting histopathological features (`extracthistopatho`)](#extracting-histopathological-features-extracthistopatho)
+  - [Deconvolution of bulkRNAseq data (`deconvbulk`).](#deconvolution-of-bulkrnaseq-data-deconvbulk)
+  - [Building a multi-task cell type model to predict cell type abundances on a tile-level (`buildmodel`).](#building-a-multi-task-cell-type-model-to-predict-cell-type-abundances-on-a-tile-level-buildmodel)
+    - [Required files](#required-files)
+    - [Parameters](#parameters)
+  - [Predicting tile-level cell type abundances using the multi-task models (`predicttiles`)](#predicting-tile-level-cell-type-abundances-using-the-multi-task-models-predicttiles)
+  - [Compute spatial features using the tile-level cell type abundances (`computespatial`)](#compute-spatial-features-using-the-tile-level-cell-type-abundances-computespatial)
 
 In brackets, the abbreviations to use for running the modules of interest
 
@@ -18,7 +21,7 @@ spotlight_modules: "extracthistopatho, deconvbulk, buildmodel, predicttiles, com
 
 > When running only a subset of modules, set the parameters required for those modules!
 
-## Extracting histopathological features 
+## Extracting histopathological features (`extracthistopatho`)
 
 Input files:
 
@@ -26,7 +29,7 @@ Input files:
 * `image_dir` : Directory with H&E images.
 * `path_codebook` : Path to [codebook.txt](https://github.com/gerstung-lab/PC-CHiP/blob/b5ff01b56dbad9a5880529cdcf5e799e912534a2/inception/codebook.txt)
 * `checkpoint_path`: checkpoints of DL model, see the Tensorflow repository [tensorflow/models](https://github.com/tensorflow/models/tree/master/research/slim#Pretrained). Checkpoint used in manuscript can be downloaded via this [link](https://www.ebi.ac.uk/biostudies/files/S-BSST292/Retrained_Inception_v4.zip) and can be found here: https://www.ebi.ac.uk/biostudies/bioimages/studies/S-BSST292. Of note, the path should point to the **directory** with the checkpoint files. 
-* `path_tissue_classes`: Path to [tissue_classes.csv](assets/tissue_classes.csv), which is provided.
+* `path_tissue_classes`: Path to [tissue_classes.csv](../assets/tissue_classes.csv), which is provided.
 
 * `tumor_purity_threshold` : Minimum tumor purity for a slide to be kept (default=80)
 * `gradient_mag_filter` : Minimum gradient magnitude, used for filtering non-informative and/or blurry tiles (default=10)
@@ -35,7 +38,7 @@ Input files:
 * `pred_out_filename` : Filename for predictions (default="pred_train")
 * `model_name` : Name of model used, ensure this corresponds to the model of the checkpoints (default="inception_v4")
 
-## Deconvolution of bulkRNAseq data
+## Deconvolution of bulkRNAseq data (`deconvbulk`).
 
 * `gene_exp_path`: Path to gene expression file (`.txt`)
 * `is_tpm`: Indicate whether given `gene_exp_path` is TPM normalized (default=false)
@@ -47,13 +50,11 @@ Input files:
 
 > The above four files are optional, by default all tools will be run. If results for one or more tools have been generated already, please set the paths. 
 
-## Building a multi-task cell type model to predict cell type abundances on a tile-level
+## Building a multi-task cell type model to predict cell type abundances on a tile-level (`buildmodel`).
 
-### Set up 
+### Required files
 
-1. Download TCGA bulkRNAseq data via the [Firehose Tool](https://gdac.broadinstitute.org) from the BROAD Institute, the files required are: “illuminahiseq_rnaseqv2-RSEM_genes”.
-2. Unzip the downloaded file (.tar.gz)
-3. Download the signatures/published scores, see table below.
+Download the signatures/published scores, see table below.
 
 | Parameter                  | Reference                                                 | Additional info                                                                                                                                                |
 | -------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -62,13 +63,7 @@ Input files:
 | `gibbons_scores_path` | https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5503821/     | Download the 'Supp Datafile S1.' or use the (direct link)[https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5503821/bin/NIHMS840944-supplement-Supp_Datafile_S1.xlsx] |
 | `thorsson_scores_path` | https://gdc.cancer.gov/about-data/publications/panimmune  | Download the 'ABSOLUTE purity/ploidy file', or use [direct link](https://api.gdc.cancer.gov/data/4f277128-f793-4354-a13d-30cc7fe9f6b5)                           |
 
-4. Update the `nf-params.yml` for the following parameters: `thorsson_scores_path`,     `estimate_scores_path`,  `absolute_tumor_purity_path` and `gibbons_scores_path`.
-5. Review other parameters relevant for this module in the same `yml` file. (see section below)
-6. Run the pipeline, do not forget to include `buildmodel` in the `spotlight_modules` parameter.
-
-### Parameters 
-
-* `clinical_file_path`: Path to clinical file (`.csv`), at least have the following columns: 'sample_submitter_id' and 'slide_submitter_id'. If **module `extracthistopatho`** is run, setting this parameter is **optional**.
+### Parameters
 
 **Publicly available scores** 
 * `thorsson_scores_path`: "assets/local/Thorsson_Scores_160_Signatures.tsv"
@@ -94,12 +89,12 @@ For more information please see the table in [modules/trainmultitaskmodel.md](./
 * `n_tiles`: Number of tiles selected per slide (default=50)
 * `split_level`: Variable to split data on (default="sample_submitter_id")
 
-## Predicting tile-level cell type abundances using the multi-task models 
+## Predicting tile-level cell type abundances using the multi-task models (`predicttiles`)
 
 * `celltype_models_path`: Path to directory with the models for each cell type, where each cell type has to have its own folder. For an example of the structure see provided models [assets/TF_models/SKCM_FF](../assets/TF_models/SKCM_FF)  (default="assets/TF_models/SKCM_FF")
 `prediction_mode` : (default="test")
 
-## Compute spatial features using the tile-level cell type abundances 
+## Compute spatial features using the tile-level cell type abundances (`computespatial`)
 
 * `out_prefix`: "dummy"
 

@@ -1,8 +1,8 @@
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-##     SysBioOncology/spotlight_docker 1.0dev
+##     SysBioOncology/SPoTLIghT 1.0dev
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ##     This is an example parameter file to pass to the `-params-file` option
-##     of nextflow run with the SysBioOncology/spotlight_docker pipeline.
+##     of nextflow run with the SysBioOncology/SPoTLIghT pipeline.
 ##
 ##     Uncomment lines with a single '#' if you want to pass the parameter to
 ##     the pipeline.
@@ -33,7 +33,7 @@ path_tissue_classes: "assets/tissue_classes.csv"
 
 # Parameters
 tumor_purity_threshold: 80
-gradient_mag_filter: 10
+gradient_mag_filter: 20
 n_shards: 320
 bot_out_filename: "bot_train"
 pred_out_filename: "pred_train"
@@ -72,9 +72,9 @@ model_name: "inception_v4"
 # # # Parameters
 # alpha_min: -4
 # alpha_max: -1
-# n_steps: 3
+# n_steps: 40
 n_outerfolds: 5
-# n_innerfolds: 2
+# n_innerfolds: 10
 # n_tiles: 50
 # split_level: "sample_submitter_id"
 

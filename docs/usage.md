@@ -1,4 +1,4 @@
-# SysBioOncology/spotlight_docker: Usage
+# SysBioOncology/SPoTLIghT: Usage
 
 ## Introduction
 
@@ -9,7 +9,9 @@
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run SysBioOncology/spotlight_docker --outdir ./results -profile apptainer
+# With PWD the cloned/forked  SysBioOncology/SPoTLIghT repository
+nextflow run ${PWD} --outdir ./results -profile apptainer
+
 ```
 
 This will launch the pipeline with the `apptainer` configuration profile. See below for more information about profiles.
@@ -34,7 +36,8 @@ Do not use `-c <file>` to specify parameters as this will result in errors. Cust
 The above pipeline run specified with a params file in yaml format:
 
 ```bash
-nextflow run SysBioOncology/spotlight_docker -profile apptainer -params-file nf-params.yml
+# With PWD the cloned/forked  SysBioOncology/SPoTLIghT repository
+nextflow run ${PWD} -profile apptainer -params-file nf-params.yml
 ```
 
 with `params.yml` containing:

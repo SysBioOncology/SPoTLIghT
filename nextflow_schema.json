@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "$id": "https://raw.githubusercontent.com/SysBioOncology/spotlight_docker/master/nextflow_schema.json",
-  "title": "SysBioOncology/spotlight_docker pipeline parameters",
+  "$id": "https://raw.githubusercontent.com/SysBioOncology/SPoTLIghT/master/nextflow_schema.json",
+  "title": "SysBioOncology/SPoTLIghT pipeline parameters",
   "description": "Computational framework (SPoTLIghT) to derive spatial graph-based interpretable features from H&E (fresh-frozen, FF) tissue slides",
   "type": "object",
   "definitions": {

@@ -1,0 +1,25 @@
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##     SysBioOncology/SPoTLIghT 1.0dev
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##     This is an example parameter file to pass to the `-params-file` option
+##     of nextflow run with the SysBioOncology/SPoTLIghT pipeline.
+##
+##     Uncomment lines with a single '#' if you want to pass the parameter to
+##     the pipeline.
+## -----------------------------------------------------------------------------
+
+## -----------------------------------------------------------------------------
+##    GENERAL OPTIONS
+## -----------------------------------------------------------------------------
+
+spotlight_modules: "extracthistopatho,predicttiles,computespatial"
+
+cancer_type: "SKCM"
+slide_type: "FFPE"
+
+## -----------------------------------------------------------------------------
+##    Extracting histopathological features
+## -----------------------------------------------------------------------------
+
+# TODO: please change `image_dir`
+image_dir: ""

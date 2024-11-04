@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    SysBioOncology/spotlight_docker
+    SysBioOncology/SPoTLIghT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/SysBioOncology/spotlight_docker
+    Github : https://github.com/SysBioOncology/SPoTLIghT
     Website: https://nf-co.re/spotlight
     Slack  : https://nfcore.slack.com/channels/spotlight
 ----------------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-# SysBioOncology/spotlight_docker: Output
+# SysBioOncology/SPoTLIghT: Output
 
 ## Introduction
 
@@ -12,7 +12,7 @@ The directories listed below will be created in the results directory after the 
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
 
-- [SysBioOncology/spotlight\_docker: Output](#sysbiooncologyspotlight_docker-output)
+- [SysBioOncology/SPoTLIghT: Output](#sysbiooncologyspotlight-output)
   - [Introduction](#introduction)
   - [Pipeline overview](#pipeline-overview)
     - [Extract histopathological features](#extract-histopathological-features)
@@ -21,6 +21,125 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
     - [Predicting tile-level cell type abundances using the multi-task models](#predicting-tile-level-cell-type-abundances-using-the-multi-task-models)
     - [Compute spatial features using the tile-level cell type abundances](#compute-spatial-features-using-the-tile-level-cell-type-abundances)
     - [Pipeline information](#pipeline-information)
+
+
+SPoTLIghT generates the following output directory structure for a run with FFPE slides:
+
+> Of note, when using FF slides, the directories `features_format_parquet` and `predictions_format_parquet` won't be created, instead, the files 'features.txt' and 'predictions.txt' are created.
+
+```bash
+{outdir}
+├── 1_extract_histopatho_features
+│   ├── avail_slides_for_img.csv
+│   ├── bot_train.txt
+│   ├── features_format_parquet
+│   │   ├── features-0.parquet
+│   │   ├── features-1.parquet
+│   ├── file_info_train.txt
+│   ├── generated_clinical_file.txt
+│   ├── pred_train.txt
+│   ├── predictions_format_parquet
+│   │   ├── predictions-0.parquet
+│   │   ├── predictions-0.parquet
+│   ├── process_train
+│   │   ├── images_train_00001-of-00320.tfrecord
+│   │   ├── images_train_00002-of-00320.tfrecord 
+│   │   ├── images_train_00004-of-00320.tfrecord
+│   └── tiles
+│       ├── xenium-skin-panel_10165_10165.jpg
+│       ├── xenium-skin-panel_10165_10627.jpg
+│       ├── xenium-skin-panel_10165_11089.jpg
+├── 2_deconv_bulk_rnaseq
+│   ├── epic.csv
+│   ├── mcp_counter.csv
+│   ├── quantiseq.csv
+│   ├── tpm.txt
+│   └── xcell.csv
+├── 3_build_multi_task_celltype_model
+│   ├── CAFs
+│   │   ├── cv_outer_splits.pkl
+│   │   ├── outer_models.pkl
+│   │   ├── outer_scores_slides_test.pkl
+│   │   ├── outer_scores_slides_train.pkl
+│   │   ├── outer_scores_tiles_test.pkl
+│   │   ├── outer_scores_tiles_train.pkl
+│   │   ├── total_tile_selection.pkl
+│   │   ├── x_train_scaler.pkl
+│   │   └── y_train_scaler.pkl
+│   ├── T_cells
+│   │   ├── cv_outer_splits.pkl
+│   │   ├── outer_models.pkl
+│   │   ├── outer_scores_slides_test.pkl
+│   │   ├── outer_scores_slides_train.pkl
+│   │   ├── outer_scores_tiles_test.pkl
+│   │   ├── outer_scores_tiles_train.pkl
+│   │   ├── total_tile_selection.pkl
+│   │   ├── x_train_scaler.pkl
+│   │   └── y_train_scaler.pkl
+│   ├── endothelial_cells
+│   │   ├── cv_outer_splits.pkl
+│   │   ├── outer_models.pkl
+│   │   ├── outer_scores_slides_test.pkl
+│   │   ├── outer_scores_slides_train.pkl
+│   │   ├── outer_scores_tiles_test.pkl
+│   │   ├── outer_scores_tiles_train.pkl
+│   │   ├── total_tile_selection.pkl
+│   │   ├── x_train_scaler.pkl
+│   │   └── y_train_scaler.pkl
+│   ├── ensembled_selected_tasks.csv
+│   ├── task_selection_names.pkl
+│   └── tumor_purity
+│       ├── cv_outer_splits.pkl
+│       ├── outer_models.pkl
+│       ├── outer_scores_slides_test.pkl
+│       ├── outer_scores_slides_train.pkl
+│       ├── outer_scores_tiles_test.pkl
+│       ├── outer_scores_tiles_train.pkl
+│       ├── total_tile_selection.pkl
+│       ├── x_train_scaler.pkl
+│       └── y_train_scaler.pkl
+├── 4_tile_level_quantification
+│   ├── test_tile_predictions_proba.csv
+│   └── test_tile_predictions_zscores.csv
+├── 5_spatial_features
+│   ├── clustering_features
+│   │   ├── FFPE_all_schc_clusters_labeled.csv
+│   │   ├── FFPE_all_schc_tiles.csv
+│   │   ├── FFPE_all_schc_tiles_raw.csv
+│   │   ├── FFPE_features_clust_all_schc_prox_wide.csv
+│   │   ├── FFPE_features_clust_indiv_schc_prox_between.csv
+│   │   ├── FFPE_features_clust_indiv_schc_prox.csv
+│   │   ├── FFPE_features_clust_indiv_schc_prox_within.csv
+│   │   ├── FFPE_frac_high_wide.csv
+│   │   ├── FFPE_graphs.pkl
+│   │   ├── FFPE_indiv_schc_clusters_labeled.csv
+│   │   ├── FFPE_indiv_schc_tiles.csv
+│   │   ├── FFPE_indiv_schc_tiles_raw.csv
+│   │   └── FFPE_nclusters_wide.csv
+│   ├── FFPE_all_features_combined.csv
+│   ├── FFPE_all_graph_features.csv
+│   ├── FFPE_clustering_features.csv
+│   ├── FFPE_graphs.pkl
+│   └── network_features
+│       ├── FFPE_features_coloc_fraction.csv
+│       ├── FFPE_features_coloc_fraction_wide.csv
+│       ├── FFPE_features_lcc_fraction_wide.csv
+│       ├── FFPE_features_ND.csv
+│       ├── FFPE_features_ND_ES.csv
+│       ├── FFPE_features_ND_sim_assignments.pkl
+│       ├── FFPE_features_ND_sims.csv
+│       ├── FFPE_features_shortest_paths_thresholded.csv
+│       ├── FFPE_features_shortest_paths_thresholded_wide.csv
+│       ├── FFPE_graphs.pkl
+│       └── FFPE_shapiro_tests.csv
+└── pipeline_info
+    ├── execution_report_2024-09-23_21-07-41.html
+    ├── execution_timeline_2024-09-23_21-07-41.html
+    ├── execution_trace_2024-09-23_21-07-41.txt
+    └── pipeline_dag_2024-09-23_21-07-41.html
+```
+
+
 
 ### Extract histopathological features
 

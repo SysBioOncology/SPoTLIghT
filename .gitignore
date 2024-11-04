@@ -63,3 +63,5 @@ nf-params-xenium.yml
 scratch.ipynb
 quick_run.sh
 scratch.py
+
+.nf-test
