@@ -14,8 +14,14 @@
 
 spotlight_modules: "extracthistopatho,predicttiles,computespatial"
 
+# TODO cancer type
 cancer_type: "SKCM"
+
+# TODO please change accordingly
 slide_type: "FFPE"
+
+# TODO please change accordingly
+is_tcga: true
 
 ## -----------------------------------------------------------------------------
 ##    Extracting histopathological features

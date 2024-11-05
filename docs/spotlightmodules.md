@@ -31,6 +31,7 @@ Input files:
 * `checkpoint_path`: checkpoints of DL model, see the Tensorflow repository [tensorflow/models](https://github.com/tensorflow/models/tree/master/research/slim#Pretrained). Checkpoint used in manuscript can be downloaded via this [link](https://www.ebi.ac.uk/biostudies/files/S-BSST292/Retrained_Inception_v4.zip) and can be found here: https://www.ebi.ac.uk/biostudies/bioimages/studies/S-BSST292. Of note, the path should point to the **directory** with the checkpoint files. 
 * `path_tissue_classes`: Path to [tissue_classes.csv](../assets/tissue_classes.csv), which is provided.
 
+* `is_tcga`: indicate whether the dataset is from the TCGA.
 * `tumor_purity_threshold` : Minimum tumor purity for a slide to be kept (default=80)
 * `gradient_mag_filter` : Minimum gradient magnitude, used for filtering non-informative and/or blurry tiles (default=10)
 * `n_shards` : number of shards for creating TFrecords (default=320)

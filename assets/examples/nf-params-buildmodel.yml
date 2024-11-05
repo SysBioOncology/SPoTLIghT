@@ -19,8 +19,6 @@ clinical_files_input: "data_example/clinical_file_TCGA_SKCM.tsv"
 cancer_type: "SKCM"
 
 slide_type: "FF"
-is_tcga: true
-is_tumor: true
 
 ## -----------------------------------------------------------------------------
 ##    Extracting histopathological features

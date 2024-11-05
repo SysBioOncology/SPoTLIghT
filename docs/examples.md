@@ -45,7 +45,7 @@ apptainer build immunedeconvr.sif docker-archive:immunedeconvr.tar.gz
 > Please note, the models used were built using the FF slides, therefore this is only to demonstrate how one would run the pipeline (modules mentioned above) with FF slides. 
 
 1. Download **tissue slides** from the [GDC Data Portal](https://portal.gdc.cancer.gov/projects/TCGA-SKCM).
-2. Adapt the param file [nf-params-examples.yml](../assets/examples/nf-params-examples.yml), i.e. set `image_dir` and `slide_type`. All other parameters are default and do not have to be changed (see default parameters [here](../nextflow.config)). 
+2. Adapt the param file [nf-params-examples.yml](../assets/examples/nf-params-examples.yml),  set `image_dir`, `slide_type='FF'` and `is_tcga=true`. All other parameters are default and do not have to be changed (see default parameters [here](../nextflow.config)). 
 3. Adapt Nexflow configuration file accordingly, example see [nf-custom.config](../nf-custom.config)
 4. Run pipeline as follows: 
 
@@ -59,7 +59,7 @@ nextflow run ${PWD} -profile apptainer -c "nf-custom.config" -params-file assets
 ## FFPE slides
 
 1. Download **diagnostic slides** from the [GDC Data Portal](https://portal.gdc.cancer.gov/projects/TCGA-SKCM).
-2. Adapt the param file [nf-params-examples.yml](../assets/examples/nf-params-examples.yml), i.e. set `image_dir` and `slide_type="FFPE"`. All other parameters are default and do not have to be changed (see default parameters [here](../nextflow.config)).
+2. Adapt the param file [nf-params-examples.yml](../assets/examples/nf-params-examples.yml), i.e. set `image_dir`, `slide_type="FFPE"` and `is_tcga=true`. All other parameters are default and do not have to be changed (see default parameters [here](../nextflow.config)).
 3. Adapt Nexflow configuration file accordingly, example see [nf-custom.config](../nf-custom.config)
 4. Run pipeline as follows: 
 
@@ -72,7 +72,7 @@ nextflow run ${PWD} -profile apptainer -c "nf-custom.config" -params-file assets
 ## CPTAC melanoma cohort
 
 1. Download H&E images (FFPE) and clinical data [here](https://www.cancerimagingarchive.net/collection/cptac-cm/).
-2. Adapt the param file [nf-params-examples.yml](../assets/examples/nf-params-examples.yml), i.e. set `image_dir` and `slide_type="FFPE"`. All other parameters are default and do not have to be changed (see default parameters [here](../nextflow.config)). 
+2. Adapt the param file [nf-params-examples.yml](../assets/examples/nf-params-examples.yml), i.e. set `image_dir`, `slide_type="FFPE"` and `is_tcga=false`. All other parameters are default and do not have to be changed (see default parameters [here](../nextflow.config)). 
 3. Adapt Nexflow configuration file accordingly, example see [nf-custom.config](../nf-custom.config)
 4. Run pipeline as follows: 
 
@@ -82,16 +82,15 @@ nextflow run ${PWD} -profile apptainer -c "nf-custom.config" -params-file assets
 ```
 > Note you can change `-outdir` and you can add additional profiles (-profile). 
 
-
 ## Xenium melanoma datasets from 10x Genomics
 
 1. Download the two H&E datasets (FFPE) here: [Human SKCM data with standard skin gene expression panel with add-on panel](
 https://www.10xgenomics.com/datasets/human-skin-preview-data-xenium-human-skin-gene-expression-panel-add-on-1-standard)
 and [Human SKCM data with standard skin gene expression panel](https://www.10xgenomics.com/datasets/human-skin-preview-data-xenium-human-skin-gene-expression-panel-1-standard
 ).
-2. Adapt the param file [nf-params-examples.yml](../assets/examples/nf-params-examples.yml),i.e. set `image_dir` and `slide_type="FFPE"`. All other parameters are default and do not have to be changed (see default parameters [here](../nextflow.config)). 
-3. Adapt Nexflow configuration file accordingly, example see [nf-custom.config](../nf-custom.config)
-4. Run pipeline as follows: 
+1. Adapt the param file [nf-params-examples.yml](../assets/examples/nf-params-examples.yml),i.e. set `image_dir`, `slide_type="FFPE"` and `is_tcga=false`. All other parameters are default and do not have to be changed (see default parameters [here](../nextflow.config)). 
+2. Adapt Nexflow configuration file accordingly, example see [nf-custom.config](../nf-custom.config)
+3. Run pipeline as follows: 
 
 ```bash
 # Assuming you're in the cloned/forked GitHub repo
