@@ -1,4 +1,4 @@
-# Integrating histopathology and transcriptomics for spatial tumor microenvironment profiling in a melanoma case study
+# Spatial Profiling of Tumors by Leveraging Imaging and Transcriptomics (SPoTLIghT)
 
 Our pipeline, SPoTLIghT, as presented in our [paper](https://www.nature.com/articles/s41698-024-00749-w), can be used to derive spatial graph-based interpretable features from H&E slides and is available as a Nextflow pipeline.
 
