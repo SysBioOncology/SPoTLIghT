@@ -1,6 +1,6 @@
 # Integrating histopathology and transcriptomics for spatial tumor microenvironment profiling in a melanoma case study
 
-Our pipeline, SPoTLIghT, can be used to derive spatial graph-based interpretable features from H&E slides and is available as a Nextflow pipeline.
+Our pipeline, SPoTLIghT, as presented in our [paper](https://www.nature.com/articles/s41698-024-00749-w), can be used to derive spatial graph-based interpretable features from H&E slides and is available as a Nextflow pipeline.
 
 The pipeline comprises the following modules:
 1.  Extracting histopathological features
@@ -47,3 +47,10 @@ apptainer build immunedeconvr.sif docker-archive:immunedeconvr.tar.gz
 2. [Extracting spatial features using SKCM cell type models](docs/examples.md)
 
 For more information, please read [docs/README.md](docs/README.md)
+
+## Citing SPoTLIghT
+
+If you use SPoTLIghT, please cite our paper: 
+
+Lapuente-Santana, Ó., Kant, J. & Eduati, F. Integrating histopathology and transcriptomics for spatial tumor microenvironment profiling in a melanoma case study. npj Precis. Onc. 8, 254 (2024). https://doi.org/10.1038/s41698-024-00749-w
+
