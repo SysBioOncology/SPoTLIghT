@@ -9,7 +9,7 @@ The pipeline comprises the following modules:
 4.  Predicting tile-level cell type abundances using the multi-task models
 5.  Compute spatial features using the tile-level cell type abundances
 
-> The building of the cell type models have only been tested using fresh frozen (FF) slides for the TCGA-SKCM dataset (melanoma) as described in the paper, for which the models are provided [here](assets/TF_models).
+> The training of the cell type models have been perfomed using fresh frozen (FF) slides for the TCGA-SKCM dataset (melanoma) as described in the paper. The trained models are provided [here](assets/TF_models).
 
 See also the figures below.
 
