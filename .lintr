@@ -6,5 +6,7 @@ linters: linters_with_defaults(
     indentation_linter(
         indent = 4L
     ),
-    commented_code_linter=NULL
+    commented_code_linter=NULL, 
+    line_length_linter(80L),
+    pipe_continuation_linter()
     )

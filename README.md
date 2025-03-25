@@ -1,178 +1,89 @@
-# Integrating histopathology and transcriptomics for spatial profiling of the tumor microenvironment: a melanoma case study
+# eduatilab/spotlight
 
-> Pipeline has been successfully tested with fresh frozen (FF) slides only. Currently, only the TF models for SKCM (melanoma) are readily available in /data/TF_models.
+[![GitHub Actions CI Status](https://github.com/eduatilab/spotlight/actions/workflows/ci.yml/badge.svg)](https://github.com/eduatilab/spotlight/actions/workflows/ci.yml)
+[![GitHub Actions Linting Status](https://github.com/eduatilab/spotlight/actions/workflows/linting.yml/badge.svg)](https://github.com/eduatilab/spotlight/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
 
-Our pipeline (SPoTLIghT) to derive spatial graph-based interpretable features from H&E (fresh-frozen, FF) tissue slides is available as a Nextflow pipeline.
+[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)
+[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
+[![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
+[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
+[![Launch on Seqera Platform](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Seqera%20Platform-%234256e7)](https://cloud.seqera.io/launch?pipeline=https://github.com/eduatilab/spotlight)
 
-The pipeline comprises the following steps:
-1. Extract 1,536 histopathological features from Inception V4 model.
-2. Predict tile level abundances for the different cell types.
-3. Compute spatial features.
+## Introduction
 
-See also the figures below.
+**eduatilab/spotlight** is a bioinformatics pipeline that ...
 
-![](src/spotlight_a.jpg)
-![](src/spotlight_b.jpg)
+<!-- TODO nf-core:
+   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
+   major pipeline sections and the types of output it produces. You're giving an overview to someone new
+   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
+-->
 
-## Required software
+<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
+     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
+<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
 
-* Docker: `27.2.0`
-* Apptainer: `1.0.2`
-* Nextflow: `24.04.4 build 5917`
+## Usage
 
-> These were the versions used for testing the pipeline.
+> [!NOTE]
+> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow.
 
-## Run SPoTLIghT
+<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
+     Explain what rows and columns represent. For instance (please edit as appropriate):
 
-*Use the SKCM multi-task models to infer spatial features*
+First, prepare a samplesheet with your input data that looks as follows:
 
-1. Create apptainer/singularity container from Docker image:
+`samplesheet.csv`:
 
-```bash
-# 1. save docker as tar or tar.gz (compressed)
-docker save joank23/spotlight -o spotlight.tar.gz
-# 2. build apptainer (.sif) from docker (.tar)
-apptainer build spotlight.sif docker-archive:spotlight.tar.gz
-
-# 1. save docker as tar or tar.gz (compressed)
-docker save joank23/immunedeconvr -o immunedeconvr.tar.gz
-# 2. build apptainer (.sif) from docker (.tar)
-apptainer build immunedeconvr.sif docker-archive:immunedeconvr.tar.gz
-
+```csv
+sample,fastq_1,fastq_2
+CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
 ```
 
-> Please rename your images file names, so they only include "-", to follow the same sample coding used by the TCGA.
+Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
 
-2. Download retrained models to extract the histopathological features, available from Fu et al., Nat Cancer, 2020 ([Retrained_Inception_v4](https://www.ebi.ac.uk/biostudies/bioimages/studies/S-BSST292)). 
-Once you unzip the folder, extract the files to the `data/checkpoint/Retrained_Inception_v4/` folder.
-3. If a TCGA dataset is used, please download metadata (i.e. "biospecimen -> TSV", unzip and keep slide.tsv), then rename `slide.tsv` to `clinical_file_TCGA_{cancer_type_abbrev}` such as `clinical_file_TCGA_SKCM.tsv` and copy to `/data`. Example dataset TCGA-SKCM can be downloaded [here](https://portal.gdc.cancer.gov/projects/TCGA-SKCM). For non-TCGA datasets, please omit this step.
-4. Setup your paths and variables in `run_pipeline.sh`
-5. Set a config ensuring compatibility with available resources, you can use `nf-custom.config` as a template. (see also `nextflow.config` for default settings). Set also the paths to the containers.
-6. Please set parameters in 'nf-params.yml', if a parameter is 'assets/NO_FILE' or 'dummy', they are optional parameters, if not used please leave as is (see also `nextflow.config` for default settings)
-7. Run the Nextflow Pipeline as follows:
+-->
+
+Now, you can run the pipeline using:
+
+<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
-
-nextflow run . -profile apptainer -c "${your_config_file}" -outdir ${your_output_directory} -params-file "nf-params.yml"
-
-````
-
-> For more information, incl. building your own multi-task model for a TCGA dataset (FF slides), please read the [docs](docs/)
-
-## Output documentation
-
-SPoTLIghT generates the following output directory structure for a run with FFPE slides:
-
-> Of note, when using FF slides, the directories `features_format_parquet` and `predictions_format_parquet` won't be created, instead, the files 'features.txt' and 'predictions.txt' are created.
-
-```bash
-{outdir}
-├── 1_extract_histopatho_features
-│   ├── avail_slides_for_img.csv
-│   ├── bot_train.txt
-│   ├── features_format_parquet
-│   │   ├── features-0.parquet
-│   │   ├── features-1.parquet
-│   ├── file_info_train.txt
-│   ├── generated_clinical_file.txt
-│   ├── pred_train.txt
-│   ├── predictions_format_parquet
-│   │   ├── predictions-0.parquet
-│   │   ├── predictions-0.parquet
-│   ├── process_train
-│   │   ├── images_train_00001-of-00320.tfrecord
-│   │   ├── images_train_00002-of-00320.tfrecord 
-│   │   ├── images_train_00004-of-00320.tfrecord
-│   └── tiles
-│       ├── xenium-skin-panel_10165_10165.jpg
-│       ├── xenium-skin-panel_10165_10627.jpg
-│       ├── xenium-skin-panel_10165_11089.jpg
-├── 2_deconv_bulk_rnaseq
-│   ├── epic.csv
-│   ├── mcp_counter.csv
-│   ├── quantiseq.csv
-│   ├── tpm.txt
-│   └── xcell.csv
-├── 3_build_multi_task_celltype_model
-│   ├── CAFs
-│   │   ├── cv_outer_splits.pkl
-│   │   ├── outer_models.pkl
-│   │   ├── outer_scores_slides_test.pkl
-│   │   ├── outer_scores_slides_train.pkl
-│   │   ├── outer_scores_tiles_test.pkl
-│   │   ├── outer_scores_tiles_train.pkl
-│   │   ├── total_tile_selection.pkl
-│   │   ├── x_train_scaler.pkl
-│   │   └── y_train_scaler.pkl
-│   ├── T_cells
-│   │   ├── cv_outer_splits.pkl
-│   │   ├── outer_models.pkl
-│   │   ├── outer_scores_slides_test.pkl
-│   │   ├── outer_scores_slides_train.pkl
-│   │   ├── outer_scores_tiles_test.pkl
-│   │   ├── outer_scores_tiles_train.pkl
-│   │   ├── total_tile_selection.pkl
-│   │   ├── x_train_scaler.pkl
-│   │   └── y_train_scaler.pkl
-│   ├── endothelial_cells
-│   │   ├── cv_outer_splits.pkl
-│   │   ├── outer_models.pkl
-│   │   ├── outer_scores_slides_test.pkl
-│   │   ├── outer_scores_slides_train.pkl
-│   │   ├── outer_scores_tiles_test.pkl
-│   │   ├── outer_scores_tiles_train.pkl
-│   │   ├── total_tile_selection.pkl
-│   │   ├── x_train_scaler.pkl
-│   │   └── y_train_scaler.pkl
-│   ├── ensembled_selected_tasks.csv
-│   ├── task_selection_names.pkl
-│   └── tumor_purity
-│       ├── cv_outer_splits.pkl
-│       ├── outer_models.pkl
-│       ├── outer_scores_slides_test.pkl
-│       ├── outer_scores_slides_train.pkl
-│       ├── outer_scores_tiles_test.pkl
-│       ├── outer_scores_tiles_train.pkl
-│       ├── total_tile_selection.pkl
-│       ├── x_train_scaler.pkl
-│       └── y_train_scaler.pkl
-├── 4_tile_level_quantification
-│   ├── test_tile_predictions_proba.csv
-│   └── test_tile_predictions_zscores.csv
-├── 5_spatial_features
-│   ├── clustering_features
-│   │   ├── FFPE_all_schc_clusters_labeled.csv
-│   │   ├── FFPE_all_schc_tiles.csv
-│   │   ├── FFPE_all_schc_tiles_raw.csv
-│   │   ├── FFPE_features_clust_all_schc_prox_wide.csv
-│   │   ├── FFPE_features_clust_indiv_schc_prox_between.csv
-│   │   ├── FFPE_features_clust_indiv_schc_prox.csv
-│   │   ├── FFPE_features_clust_indiv_schc_prox_within.csv
-│   │   ├── FFPE_frac_high_wide.csv
-│   │   ├── FFPE_graphs.pkl
-│   │   ├── FFPE_indiv_schc_clusters_labeled.csv
-│   │   ├── FFPE_indiv_schc_tiles.csv
-│   │   ├── FFPE_indiv_schc_tiles_raw.csv
-│   │   └── FFPE_nclusters_wide.csv
-│   ├── FFPE_all_features_combined.csv
-│   ├── FFPE_all_graph_features.csv
-│   ├── FFPE_clustering_features.csv
-│   ├── FFPE_graphs.pkl
-│   └── network_features
-│       ├── FFPE_features_coloc_fraction.csv
-│       ├── FFPE_features_coloc_fraction_wide.csv
-│       ├── FFPE_features_lcc_fraction_wide.csv
-│       ├── FFPE_features_ND.csv
-│       ├── FFPE_features_ND_ES.csv
-│       ├── FFPE_features_ND_sim_assignments.pkl
-│       ├── FFPE_features_ND_sims.csv
-│       ├── FFPE_features_shortest_paths_thresholded.csv
-│       ├── FFPE_features_shortest_paths_thresholded_wide.csv
-│       ├── FFPE_graphs.pkl
-│       └── FFPE_shapiro_tests.csv
-└── pipeline_info
-    ├── execution_report_2024-09-23_21-07-41.html
-    ├── execution_timeline_2024-09-23_21-07-41.html
-    ├── execution_trace_2024-09-23_21-07-41.txt
-    └── pipeline_dag_2024-09-23_21-07-41.html
+nextflow run eduatilab/spotlight \
+   -profile <docker/singularity/.../institute> \
+   --input samplesheet.csv \
+   --outdir <OUTDIR>
 ```
+
+> [!WARNING]
+> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
+
+## Credits
+
+eduatilab/spotlight was originally written by Joan Kant.
+
+We thank the following people for their extensive assistance in the development of this pipeline:
+
+<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+
+## Contributions and Support
+
+If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
+
+## Citations
+
+<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
+<!-- If you use eduatilab/spotlight for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+
+<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
+
+An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
+
+This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/main/LICENSE).
+
+> **The nf-core framework for community-curated bioinformatics pipelines.**
+>
+> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
+>
+> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).

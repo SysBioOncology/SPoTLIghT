@@ -1,3 +1,11 @@
+include { CREATE_CLINICAL_FILE       } from '../../../modules/local/create_clinical_file/main.nf'
+include { CREATE_LIST_AVAIL_SLIDES   } from '../../../modules/local/create_list_avail_slides/main.nf'
+include { TILE_SLIDE                 } from '../../../modules/local/tile_slide/main.nf'
+include { FORMAT_TILE_DATA_STRUCTURE } from '../../../modules/local/format_tile_data_structure/main.nf'
+include { PREPROCESSING_SLIDES       } from '../../../modules/local/pre_processing/preprocessingslides.nf'
+include { PREDICT_BOTTLENECK_OUT     } from '../../../modules/local/predict_bottleneck_out/main.nf'
+include { POST_PROCESS_FEATURES      } from '../../../modules/local/post_process_features/main.nf'
+include { POST_PROCESS_PREDICTIONS   } from '../../../modules/local/post_process_predictions/postprocessingpredictions.nf'
 //
 // Subworkflow with functionality specific to the SysBioOncology/spotlight_docker pipeline
 //
@@ -8,99 +16,86 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include {   CREATE_CLINICAL_FILE  } from '../../../modules/local/createclinicalfile.nf'
-include {   CREATE_LIST_AVAIL_SLIDES } from '../../../modules/local/createlistavailableslides.nf'
-include {   TILE_SLIDE } from '../../../modules/local/tileslide.nf'
-include {   FORMAT_TILE_DATA_STRUCTURE  } from '../../../modules/local/formattiledatastructure.nf'
-include {   PREPROCESSING_SLIDES } from '../../../modules/local/preprocessingslides.nf'
-include {   PREDICT_BOTTLENECK_OUT  } from '../../../modules/local/predictbottleneckout.nf'
-include {   POST_PROCESSING_FEATURES    } from '../../../modules/local/postprocessingfeatures.nf'
-include {   POST_PROCESSING_PREDICTIONS } from '../../../modules/local/postprocessingpredictions.nf'
 
 workflow EXTRACT_HISTOPATHO_FEATURES {
-    take:
-        clinical_files_input
-        path_codebook
-        cancer_type
-        is_tumor
-        out_prefix
-        tumor_purity_threshold
-        is_tcga
-        image_dir
-        gradient_mag_filter
-        n_shards
-        bot_out_filename
-        pred_out_filename
-        model_name
-        checkpoint_path
-        slide_type
-        path_tissue_classes
-
     main:
     // Only required for 'creating a clinical file'
-    class_name = is_tcga 
-    ? (is_tumor ? "${cancer_type}_T" : "${cancer_type}_N")
-    : cancer_type
+    class_name = params.is_tcga
+        ? (params.is_tumor ? "${params.cancer_type}_T" : "${params.cancer_type}_N")
+        : params.cancer_type
+
+    ch_clinical_files_input = params.clinical_files_input ? Channel.fromPath(params.clinical_files_input) : Channel.empty()
+    ch_image_dir = params.image_dir ? Channel.fromPath("${params.image_dir}", type: 'dir') : Channel.empty()
+    ch_images = params.image_dir ? Channel.fromPath("${params.image_dir}/*", type: 'file') : Channel.empty()
+    ch_checkpoint_path = params.checkpoint_path ? Channel.fromPath(params.checkpoint_path) : Channel.empty()
+    ch_codebook = params.path_codebook ? Channel.fromPath(params.path_codebook) : Channel.empty()
+    ch_tissue_classes = params.path_tissue_classes ? Channel.fromPath(params.path_tissue_classes) : Channel.empty()
+
+    ch_images = ch_images.map { image -> [[slide_id: image.simpleName, slide_filename: image.name], image] }
+    ch_template_txt = Channel.fromPath("${projectDir}/assets/tmp_clinical_file.txt")
 
     CREATE_CLINICAL_FILE(
-        clinical_files_input        = clinical_files_input,
-        class_name                  = class_name,
-        out_prefix                  = out_prefix,
-        path_codebook               = path_codebook,
-        tumor_purity_threshold      = tumor_purity_threshold,
-        is_tcga                     = is_tcga,
-        image_dir                   = image_dir,
-        slide_type                  = slide_type
-    )
-    CREATE_LIST_AVAIL_SLIDES(
-        clinical_file_path          = CREATE_CLINICAL_FILE.out.txt,
-        image_dir                   = image_dir
+        ch_clinical_files_input.ifEmpty(file("empty")),
+        ch_codebook,
+        ch_template_txt,
+        ch_image_dir,
+        class_name,
+        params.out_prefix,
+        params.tumor_purity_threshold,
+        params.is_tcga,
+        params.slide_type,
     )
 
-    avail_img_to_process = CREATE_LIST_AVAIL_SLIDES.out.csv \
-                                    | splitCsv(header:true) \
-                                    | map { row -> tuple(row.slide_id, row.slide_filename, file("${image_dir}/${row.slide_filename}")) }
-    TILE_SLIDE (
-        avail_img_to_process    = avail_img_to_process,
-        gradient_mag_filter     = gradient_mag_filter,
+    CREATE_LIST_AVAIL_SLIDES(
+        CREATE_CLINICAL_FILE.out.txt,
+        ch_image_dir,
+    )
+
+    ch_avail_img_to_process = CREATE_LIST_AVAIL_SLIDES.out.csv
+        | splitCsv(header: true)
+        | map { row -> [[slide_id: row.slide_id, slide_filename: row.slide_filename]] }
+    ch_avail_img_to_process = ch_avail_img_to_process.join(ch_images)
+
+    TILE_SLIDE(
+        ch_avail_img_to_process,
+        params.gradient_mag_filter,
     )
 
     FORMAT_TILE_DATA_STRUCTURE(
-        all_tiles               = TILE_SLIDE.out.jpg.collect(),
-        clinical_file_path      = CREATE_CLINICAL_FILE.out.txt,
-        image_dir               = image_dir,
-        is_tcga                 = is_tcga
+        TILE_SLIDE.out.jpg.collect(),
+        CREATE_CLINICAL_FILE.out.txt,
+        params.is_tcga,
     )
 
     PREPROCESSING_SLIDES(
-        file_info_train         = FORMAT_TILE_DATA_STRUCTURE.out.txt,
-        n_shards                = n_shards
+        FORMAT_TILE_DATA_STRUCTURE.out.txt,
+        params.n_shards,
     )
 
     PREDICT_BOTTLENECK_OUT(
-        bot_out_filename        = bot_out_filename,
-        pred_out_filename       = pred_out_filename,
-        tf_records              = PREPROCESSING_SLIDES.out.tfrecords.collect(),
-        model_name              = model_name,
-        checkpoint_path         = checkpoint_path
+        params.bot_out_filename,
+        params.pred_out_filename,
+        PREPROCESSING_SLIDES.out.tfrecords.collect(),
+        params.model_name,
+        ch_checkpoint_path,
     )
 
-    POST_PROCESSING_FEATURES(
-        bot_train_file          = PREDICT_BOTTLENECK_OUT.out.bot_txt,
-        slide_type              = slide_type,
-        is_tcga                 = is_tcga
+    POST_PROCESS_FEATURES(
+        PREDICT_BOTTLENECK_OUT.out.bot_txt,
+        params.slide_type,
+        params.is_tcga,
     )
 
-    POST_PROCESSING_PREDICTIONS(
-        path_codebook           = path_codebook,
-        path_tissue_classes     = path_tissue_classes,
-        pred_train_file         = PREDICT_BOTTLENECK_OUT.out.pred_txt,
-        cancer_type             = cancer_type,
-        slide_type              = slide_type
+    POST_PROCESS_PREDICTIONS(
+        ch_codebook,
+        ch_tissue_classes,
+        PREDICT_BOTTLENECK_OUT.out.pred_txt,
+        params.cancer_type,
+        params.slide_type,
     )
 
     emit:
-    clinical_file   = CREATE_CLINICAL_FILE.out.txt
-    features        = POST_PROCESSING_FEATURES.out.txt_parquet
-    predictions     = POST_PROCESSING_PREDICTIONS.out.txt_parquet
+    clinical_file = CREATE_CLINICAL_FILE.out.txt
+    features      = POST_PROCESS_FEATURES.out.txt_parquet
+    predictions   = POST_PROCESS_PREDICTIONS.out.txt_parquet
 }

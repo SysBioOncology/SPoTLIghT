@@ -1,0 +1,47 @@
+name: spotlight
+description: "Computational framework (SPoTLIghT) to derive spatial graph-based interpretable features from H&E (fresh-frozen, FF) tissue slides."
+author: Joan Kant
+prefix: ""
+org: "eduatilab"
+skip_features:
+  - github
+  - ci
+  - igenomes
+  - nf_core_configs
+  - code_linters
+  - gitpod
+  - codespaces
+  - multiqc
+  - fastqc
+  - changelog
+  - email
+  - adaptivecard
+  - slackreport
+  - test_config
+  - seqera_platform
+version: 1.0.0dev
+template:
+  author: Joan Kant
+  description: "Computational framework (SPoTLIghT) to derive spatial graph-based interpretable features from H&E (fresh-frozen, FF) tissue slides."
+  force: false
+  is_nfcore: false
+  name: spotlight
+  org: "eduatilab"
+  outdir: .
+  skip_features:
+    - github
+    - ci
+    - igenomes
+    - nf_core_configs
+    - code_linters
+    - gitpod
+    - codespaces
+    - multiqc
+    - fastqc
+    - changelog
+    - email
+    - adaptivecard
+    - slackreport
+    - test_config
+    - seqera_platform
+  version: 0.1.0dev
