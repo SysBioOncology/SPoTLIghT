@@ -20,6 +20,7 @@ include { IMMUNEDECONV                } from '../../../modules/local/immunedecon
 workflow DECONVOLUTE_BULKRNASEQ {
     main:
 
+    ch_versions = Channel.empty()
     ch_epic = Channel.of(["epic", params.epic_path ? file(params.epic_path) : "empty"])
     ch_quantiseq = Channel.of(["quantiseq", params.quantiseq_path ? file(params.quantiseq_path) : "empty"])
     ch_mcp_counter = Channel.of(["mcp_counter", params.mcp_counter_path ? file(params.mcp_counter_path) : "empty"])
@@ -35,6 +36,7 @@ workflow DECONVOLUTE_BULKRNASEQ {
 
     ch_tpm.ifEmpty(file(params.gene_exp_path)) | CREATE_TPM_MATRIX
     ch_tpm = CREATE_TPM_MATRIX.out.txt.collect()
+    ch_versions = ch_versions.mix(CREATE_TPM_MATRIX.out.versions)
 
     ch_immune_deconv = ch_deconv
         .combine(ch_tpm)
@@ -45,12 +47,14 @@ workflow DECONVOLUTE_BULKRNASEQ {
             return [tool, deconv_path]
         }
 
-    ch_immune_deconv.invalid.combine(ch_mcp_probesets).combine(ch_mcp_genes).view()
     IMMUNEDECONV(
         ch_immune_deconv.invalid.combine(ch_mcp_probesets).combine(ch_mcp_genes)
     )
 
+    ch_versions = ch_versions.mix(IMMUNEDECONV.out.versions)
+
     emit:
     tpm           = ch_tpm
     immune_deconv = IMMUNEDECONV.out.csv.mix(ch_immune_deconv.valid)
+    versions      = ch_versions
 }

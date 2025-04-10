@@ -2,10 +2,10 @@ include { CREATE_CLINICAL_FILE       } from '../../../modules/local/create_clini
 include { CREATE_LIST_AVAIL_SLIDES   } from '../../../modules/local/create_list_avail_slides/main.nf'
 include { TILE_SLIDE                 } from '../../../modules/local/tile_slide/main.nf'
 include { FORMAT_TILE_DATA_STRUCTURE } from '../../../modules/local/format_tile_data_structure/main.nf'
-include { PREPROCESSING_SLIDES       } from '../../../modules/local/pre_processing/preprocessingslides.nf'
+include { PREPROCESSING_SLIDES       } from '../../../modules/local/pre_processing/main.nf'
 include { PREDICT_BOTTLENECK_OUT     } from '../../../modules/local/predict_bottleneck_out/main.nf'
 include { POST_PROCESS_FEATURES      } from '../../../modules/local/post_process_features/main.nf'
-include { POST_PROCESS_PREDICTIONS   } from '../../../modules/local/post_process_predictions/postprocessingpredictions.nf'
+include { POST_PROCESS_PREDICTIONS   } from '../../../modules/local/post_process_predictions/main.nf'
 //
 // Subworkflow with functionality specific to the SysBioOncology/spotlight_docker pipeline
 //
@@ -19,6 +19,7 @@ include { POST_PROCESS_PREDICTIONS   } from '../../../modules/local/post_process
 
 workflow EXTRACT_HISTOPATHO_FEATURES {
     main:
+    ch_versions = Channel.empty()
     // Only required for 'creating a clinical file'
     class_name = params.is_tcga
         ? (params.is_tumor ? "${params.cancer_type}_T" : "${params.cancer_type}_N")
@@ -45,11 +46,13 @@ workflow EXTRACT_HISTOPATHO_FEATURES {
         params.is_tcga,
         params.slide_type,
     )
+    ch_versions = ch_versions.mix(CREATE_CLINICAL_FILE.out.versions)
 
     CREATE_LIST_AVAIL_SLIDES(
         CREATE_CLINICAL_FILE.out.txt,
         ch_image_dir,
     )
+    ch_versions = ch_versions.mix(CREATE_LIST_AVAIL_SLIDES.out.versions)
 
     ch_avail_img_to_process = CREATE_LIST_AVAIL_SLIDES.out.csv
         | splitCsv(header: true)
@@ -60,17 +63,24 @@ workflow EXTRACT_HISTOPATHO_FEATURES {
         ch_avail_img_to_process,
         params.gradient_mag_filter,
     )
+    ch_tiles = TILE_SLIDE.out.jpg.collect()
+    ch_versions = ch_versions.mix(TILE_SLIDE.out.versions)
 
     FORMAT_TILE_DATA_STRUCTURE(
-        TILE_SLIDE.out.jpg.collect(),
+        ch_tiles,
+        ch_image_dir,
         CREATE_CLINICAL_FILE.out.txt,
         params.is_tcga,
     )
+    ch_versions = ch_versions.mix(FORMAT_TILE_DATA_STRUCTURE.out.versions)
 
     PREPROCESSING_SLIDES(
         FORMAT_TILE_DATA_STRUCTURE.out.txt,
+        ch_tiles,
         params.n_shards,
     )
+    ch_versions = ch_versions.mix(PREPROCESSING_SLIDES.out.versions)
+
 
     PREDICT_BOTTLENECK_OUT(
         params.bot_out_filename,
@@ -79,12 +89,16 @@ workflow EXTRACT_HISTOPATHO_FEATURES {
         params.model_name,
         ch_checkpoint_path,
     )
+    ch_versions = ch_versions.mix(PREDICT_BOTTLENECK_OUT.out.versions)
+
 
     POST_PROCESS_FEATURES(
         PREDICT_BOTTLENECK_OUT.out.bot_txt,
         params.slide_type,
         params.is_tcga,
     )
+    ch_versions = ch_versions.mix(POST_PROCESS_FEATURES.out.versions)
+
 
     POST_PROCESS_PREDICTIONS(
         ch_codebook,
@@ -93,9 +107,11 @@ workflow EXTRACT_HISTOPATHO_FEATURES {
         params.cancer_type,
         params.slide_type,
     )
+    ch_versions = ch_versions.mix(POST_PROCESS_PREDICTIONS.out.versions)
 
     emit:
     clinical_file = CREATE_CLINICAL_FILE.out.txt
     features      = POST_PROCESS_FEATURES.out.txt_parquet
     predictions   = POST_PROCESS_PREDICTIONS.out.txt_parquet
+    versions      = ch_versions
 }

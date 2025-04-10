@@ -9,6 +9,7 @@ from pathlib import Path
 
 import features.features as features
 import pandas as pd
+import utils.nf_utils as nf
 from joblib import Parallel, delayed
 from model.constants import DEFAULT_CELL_TYPES
 
@@ -100,7 +101,13 @@ def get_args():
         "--n_cores", type=int, help="Number of cores to use (parallelization)"
     )
 
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
 
@@ -210,7 +217,7 @@ def compute_proximity_from_simultaneous_schc(
         index=["slide_submitter_id"], columns=["pair"]
     )["proximity"]
     new_cols = [
-        f'prox CC {col.replace("_", " ")} clusters' for col in all_prox_df_wide.columns
+        f"prox CC {col.replace('_', ' ')} clusters" for col in all_prox_df_wide.columns
     ]
     all_prox_df_wide.columns = new_cols
     all_prox_df_wide = all_prox_df_wide.reset_index()
@@ -233,6 +240,13 @@ def main(args):
         Path(args.output_dir, f"{args.prefix}_features_clust_all_schc_prox_wide.csv"),
         index=False,
     )
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["pandas", "networkx", "numpy", "scipy", "scikit-learn"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

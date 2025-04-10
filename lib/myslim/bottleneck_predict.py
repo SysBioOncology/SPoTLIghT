@@ -4,9 +4,6 @@ import sys
 import time
 
 import tensorflow.compat.v1 as tf
-
-sys.path.append(os.getcwd())
-
 import tf_slim as slim
 from nets import nets_factory
 from preprocessing import preprocessing_factory

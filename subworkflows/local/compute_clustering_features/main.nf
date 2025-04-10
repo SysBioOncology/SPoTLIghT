@@ -25,92 +25,97 @@ workflow COMPUTE_CLUSTERING_FEATURES {
     graphs
 
     main:
+    ch_max_dist = params.max_dist ? Channel.value(params.max_dist) : Channel.of("EMPTY")
+    ch_schc_simultaneous = Channel.empty()
+    ch_schc_indiv = Channel.empty()
+    ch_versions = Channel.empty()
 
+    // Clustering
+    ch_cluster_input = tile_level_cell_type_quantification.combine(cell_types).combine(graphs)
 
     CLUSTERING_SCHC_SIMULTANEOUS(
-        tile_level_cell_type_quantification,
-        cell_types,
-        graphs,
+        ch_cluster_input,
         params.slide_type,
         params.out_prefix,
     )
-
+    ch_schc_simultaneous = CLUSTERING_SCHC_SIMULTANEOUS.out.csv
+    ch_simul_prox_input = ch_schc_simultaneous.combine(ch_max_dist).combine(cell_types)
+    ch_versions = ch_versions.mix(CLUSTERING_SCHC_SIMULTANEOUS.out.versions)
     CLUSTERING_SCHC_INDIVIDUAL(
-        tile_level_cell_type_quantification,
-        cell_types,
-        graphs,
+        ch_cluster_input,
         params.slide_type,
         params.out_prefix,
     )
-
+    ch_schc_indiv = CLUSTERING_SCHC_INDIVIDUAL.out.csv
+    ch_indiv_prox_input = ch_schc_indiv.combine(ch_max_dist).combine(cell_types)
+    ch_versions = ch_versions.mix(CLUSTERING_SCHC_INDIVIDUAL.out.versions)
+    // Features based on SIMULTANEOUS clustering
     COMPUTE_NCLUSTERS(
-        CLUSTERING_SCHC_SIMULTANEOUS.out.csv,
-        cell_types,
+        ch_schc_simultaneous.combine(cell_types),
         params.slide_type,
         params.out_prefix,
     )
-
-    COMPUTE_FRAC_HIGH(
-        CLUSTERING_SCHC_INDIVIDUAL.out.csv,
-        params.slide_type,
-        params.out_prefix,
-    )
+    ch_versions = ch_versions.mix(COMPUTE_NCLUSTERS.out.versions)
 
     COMPUTE_PROXIMITY_FROM_SIMULTANEOUS_SCHC(
-        CLUSTERING_SCHC_SIMULTANEOUS.out.csv,
-        cell_types,
+        ch_simul_prox_input,
         params.n_clusters,
-        params.max_dist,
         params.max_n_tiles_threshold,
         params.tile_size,
         params.overlap,
         params.slide_type,
         params.out_prefix,
     )
+    ch_versions = ch_versions.mix(COMPUTE_PROXIMITY_FROM_SIMULTANEOUS_SCHC.out.versions)
 
+    COMPUTE_FRAC_HIGH(
+        ch_schc_indiv,
+        params.slide_type,
+        params.out_prefix,
+    )
+    ch_versions = ch_versions.mix(COMPUTE_FRAC_HIGH.out.versions)
 
     COMPUTE_PROXIMITY_FROM_INDIV_SCHC_WITHIN(
-        CLUSTERING_SCHC_INDIVIDUAL.out.csv,
-        cell_types,
+        ch_indiv_prox_input,
         params.n_clusters,
-        params.max_dist,
         params.max_n_tiles_threshold,
         params.tile_size,
         params.overlap,
         params.slide_type,
         params.out_prefix,
     )
+    ch_indiv_prox_within = COMPUTE_PROXIMITY_FROM_INDIV_SCHC_WITHIN.out.csv
+    ch_versions = ch_versions.mix(COMPUTE_PROXIMITY_FROM_INDIV_SCHC_WITHIN.out.versions)
 
-
+    // Proximity features
     COMPUTE_PROXIMITY_FROM_INDIV_SCHC_BETWEEN(
-        CLUSTERING_SCHC_INDIVIDUAL.out.csv,
-        cell_types,
+        ch_indiv_prox_input,
         params.n_clusters,
-        params.max_dist,
         params.max_n_tiles_threshold,
         params.tile_size,
         params.overlap,
         params.slide_type,
         params.out_prefix,
     )
-
+    ch_indiv_prox_between = COMPUTE_PROXIMITY_FROM_INDIV_SCHC_BETWEEN.out.csv
+    ch_versions = ch_versions.mix(COMPUTE_PROXIMITY_FROM_INDIV_SCHC_BETWEEN.out.versions)
     COMPUTE_PROXIMITY_FROM_INDIV_SCHC_COMBINE(
-        COMPUTE_PROXIMITY_FROM_INDIV_SCHC_BETWEEN.out.csv,
-        COMPUTE_PROXIMITY_FROM_INDIV_SCHC_WITHIN.out.csv,
+        ch_indiv_prox_between.combine(ch_indiv_prox_within),
         params.slide_type,
         params.out_prefix,
     )
+    ch_versions = ch_versions.mix(COMPUTE_PROXIMITY_FROM_INDIV_SCHC_COMBINE.out.versions)
 
-
+    ch_combine_input = COMPUTE_FRAC_HIGH.out.csv.combine(COMPUTE_NCLUSTERS.out.csv).combine(COMPUTE_PROXIMITY_FROM_SIMULTANEOUS_SCHC.out.csv).combine(COMPUTE_PROXIMITY_FROM_INDIV_SCHC_COMBINE.out.csv)
     COMBINE_CLUSTERING_FEATURES(
-        COMPUTE_FRAC_HIGH.out.csv,
-        COMPUTE_NCLUSTERS.out.csv,
-        COMPUTE_PROXIMITY_FROM_SIMULTANEOUS_SCHC.out.csv,
-        COMPUTE_PROXIMITY_FROM_INDIV_SCHC_COMBINE.out.csv,
+        ch_combine_input,
         params.slide_type,
         params.out_prefix,
     )
+
+    ch_versions = ch_versions.mix(COMBINE_CLUSTERING_FEATURES.out.versions)
 
     emit:
-    csv = COMBINE_CLUSTERING_FEATURES.out.csv
+    csv      = COMBINE_CLUSTERING_FEATURES.out.csv
+    versions = ch_versions
 }

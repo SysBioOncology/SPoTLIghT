@@ -1,4 +1,6 @@
 process BUILD_MULTITASK_CELLTYPE_MODEL {
+    tag "${cell_type}"
+
     input:
     tuple val(cell_type), path(bottleneck_features_path)
     path var_names_path
@@ -14,10 +16,13 @@ process BUILD_MULTITASK_CELLTYPE_MODEL {
 
     output:
     tuple path("${cell_type}/cv_outer_splits.pkl"), path("${cell_type}/total_tile_selection.pkl"), path("${cell_type}/outer_models.pkl"), path("${cell_type}/x_train_scaler.pkl"), path("${cell_type}/y_train_scaler.pkl"), path("${cell_type}/outer_scores_slides_train.pkl"), path("${cell_type}/outer_scores_slides_test.pkl"), path("${cell_type}/outer_scores_tiles_train.pkl"), path("${cell_type}/outer_scores_tiles_test.pkl"), emit: pkl
+    path "versions.yml", emit: versions
 
     script:
+    def args = task.ext.args ?: ''
     """
-    build_multitask_celltype_model.py \\
+    build_multitask_celltype_model.py ${args} \\
+        --nf-process-id ${task.process} \\
         --bottleneck_features_path ${bottleneck_features_path} \\
         --category ${cell_type} \\
         --alpha_min ${alpha_min} \\
@@ -45,5 +50,6 @@ process BUILD_MULTITASK_CELLTYPE_MODEL {
     touch "${cell_type}/outer_scores_slides_test.pkl"
     touch "${cell_type}/outer_scores_tiles_train.pkl"
     touch "${cell_type}/outer_scores_tiles_test.pkl"
+    touch "versions.yml"
     """
 }

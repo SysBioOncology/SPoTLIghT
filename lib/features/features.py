@@ -4,24 +4,27 @@ Compute different features from:
 2. Spatially Constrained Hierarchical Clustering (i.e. agglomerative clustering
 with connectivity constraints)
 """
+
 import itertools
 import math
 import statistics as statpy
-import sys
-import os
+
 import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
-from scipy.spatial import ConvexHull
-from sklearn.metrics import pairwise_distances_argmin_min
 
 # Own modules
 from model.constants import *
+from model.constants import DEFAULT_CELL_TYPES
+from scipy.spatial import ConvexHull
+from sklearn.metrics import pairwise_distances_argmin_min
+
 import features.utils as utils
 
+
 def determine_lcc(graph, cell_type_assignments, cell_types=None):
-    """ Determine the fraction of the largest connected component (LCC) of a
+    """Determine the fraction of the largest connected component (LCC) of a
     cell type w.r.t. to all nodes (tiles) of that cell type.
     1. Determine the number of nodes N in the LCC for the probability map of a
     cell type.
@@ -91,7 +94,12 @@ def compute_dual_node_fractions(cell_type_assignments, cell_types=None):
 
 
 def compute_n_shortest_paths_max_length(
-    graph, cell_type_assignments=None, cell_types=None, cutoff=2, predictions=None, slide_submitter_id=None
+    graph,
+    cell_type_assignments=None,
+    cell_types=None,
+    cutoff=2,
+    predictions=None,
+    slide_submitter_id=None,
 ):
     """
     Determine the number of shortest paths that have a path length of max N
@@ -116,10 +124,7 @@ def compute_n_shortest_paths_max_length(
 
     # Compute all shortest paths with max length of cutoff
     all_paths = nx.all_pairs_shortest_path(graph, cutoff=cutoff)
-    all_paths = pd.DataFrame(
-        all_paths,
-        columns=["source", "target_paths"]
-    )
+    all_paths = pd.DataFrame(all_paths, columns=["source", "target_paths"])
     all_paths = all_paths.set_index("source")
 
     shortest_paths_diff = []
@@ -171,7 +176,9 @@ def compute_n_shortest_paths_max_length(
         if slide_submitter_id is not None:
             shortest_paths["slide_submitter_id"] = slide_submitter_id
         else:
-            shortest_paths["slide_submitter_id"] = np.unique(slide_data["slide_submitter_id"])[0]
+            shortest_paths["slide_submitter_id"] = np.unique(
+                slide_data["slide_submitter_id"]
+            )[0]
         return shortest_paths
     return pd.DataFrame()
 
@@ -192,20 +199,20 @@ def n_clusters_per_cell_type(clusters_characterized, cell_types=None):
         cell_types = DEFAULT_CELL_TYPES
 
     clusters_characterized_long = clusters_characterized.melt(
-        id_vars=[ "slide_submitter_id", "cluster_label"],
+        id_vars=["slide_submitter_id", "cluster_label"],
         value_vars=cell_types,
         var_name="cell_type",
         value_name="is_assigned",
     )
 
     num_clust_per_cell_type_slide = (
-        clusters_characterized_long.groupby([ "slide_submitter_id", "cell_type"])
+        clusters_characterized_long.groupby(["slide_submitter_id", "cell_type"])
         .sum()
         .reset_index()
     )
     # Count the total number of clusters
     num_clust_per_cell_type_slide["n_clusters"] = (
-        clusters_characterized_long.groupby([ "slide_submitter_id", "cell_type"])
+        clusters_characterized_long.groupby(["slide_submitter_id", "cell_type"])
         .count()
         .reset_index()["cluster_label"]
     )
@@ -231,9 +238,7 @@ def n_high_clusters(labeled_clusters):
     """
     # Determine the number of clusters labeled as 'high'
     n_per_label = (
-        labeled_clusters.groupby(
-            [ "slide_submitter_id", "cell_type_map", "is_high"]
-        )
+        labeled_clusters.groupby(["slide_submitter_id", "cell_type_map", "is_high"])
         .count()
         .reset_index()
     )
@@ -248,7 +253,7 @@ def n_high_clusters(labeled_clusters):
 
     # Combine
     labeled_slides_grouped = pd.merge(
-        n_per_label, n_clusters, on=[ "slide_submitter_id", "cell_type_map"]
+        n_per_label, n_clusters, on=["slide_submitter_id", "cell_type_map"]
     )
     # Determine the fraction of clusters labeled as high w.r.t the total number of clusters per cell type map (for each slide)
     labeled_slides_grouped["fraction"] = (
@@ -320,7 +325,6 @@ def compute_proximity_clusters_pairs(
             frac (float): computed proximity
         """
         if (len(coords1) > 0) & (len(coords2) > 0):
-
             if len(coords1) > len(coords2):
                 _, dist = pairwise_distances_argmin_min(coords1, coords2)
             else:
@@ -502,7 +506,10 @@ def compute_proximity_clusters_pairs(
             max_dist=max_dist,
             cell_types=cell_types,
         )
-    raise Exception( "Choose a valid method: 'all', 'individual_between' or 'individual_within'")
+    raise Exception(
+        "Choose a valid method: 'all', 'individual_between' or 'individual_within'"
+    )
+
 
 def post_processing_proximity(prox_df, slide_submitter_id, method="all"):
     """
@@ -529,10 +536,8 @@ def post_processing_proximity(prox_df, slide_submitter_id, method="all"):
                 .sort_values(ascending=False)[:3]
                 .mean()
             )
-            out.append([ slide_submitter_id, pair, prox_top3_mean])
-        return pd.DataFrame(
-            out, columns=[ "slide_submitter_id", "pair", "proximity"]
-        )
+            out.append([slide_submitter_id, pair, prox_top3_mean])
+        return pd.DataFrame(out, columns=["slide_submitter_id", "pair", "proximity"])
 
     elif method == "individual_between":
         out = []
@@ -548,12 +553,11 @@ def post_processing_proximity(prox_df, slide_submitter_id, method="all"):
                     .sort_values(ascending=False)[:3]
                     .mean()
                 )
-                out.append(
-                    [ slide_submitter_id, comparison, pair, prox_top3_mean])
+                out.append([slide_submitter_id, comparison, pair, prox_top3_mean])
 
         return pd.DataFrame(
             out,
-            columns=[ "slide_submitter_id", "comparison", "pair", "proximity"],
+            columns=["slide_submitter_id", "comparison", "pair", "proximity"],
         )
     elif method == "individual_within":
         out = []
@@ -570,13 +574,11 @@ def post_processing_proximity(prox_df, slide_submitter_id, method="all"):
                     .sort_values(ascending=False)[:3]
                     .mean()
                 )
-                out.append(
-                    [ slide_submitter_id, comparison, pair, prox_top3_mean]
-                )
+                out.append([slide_submitter_id, comparison, pair, prox_top3_mean])
 
         return pd.DataFrame(
             out,
-            columns=[ "slide_submitter_id", "comparison", "pair", "proximity"],
+            columns=["slide_submitter_id", "comparison", "pair", "proximity"],
         )
 
 
@@ -605,7 +607,7 @@ def compute_shape_features(
     if cell_types is None:
         cell_types = DEFAULT_CELL_TYPES
     slide_data = tiles[tiles.slide_submitter_id == slide_submitter_id]
-    if (method == "all"):
+    if method == "all":
         cluster_columns = [f"is_{cell_type}_cluster" for cell_type in cell_types]
         out = []
         # Find exclusive slides
@@ -629,7 +631,9 @@ def compute_shape_features(
                     roundness = (roundness * (roundness <= 1)) or 1
 
                     for cell_type in pd.Series(cell_types)[
-                        subset.loc[subset.cluster_label == cluster_label, cluster_columns]
+                        subset.loc[
+                            subset.cluster_label == cluster_label, cluster_columns
+                        ]
                         .iloc[0]
                         .tolist()
                     ]:
@@ -644,40 +648,44 @@ def compute_shape_features(
                         )
                 # trunk-ignore(flake8/E722)
                 except:
-                    print(f"Failed to create a convex hull for cluster={cluster_label} of slide {slide_submitter_id}")
-    elif(method == "individual"):
+                    print(
+                        f"Failed to create a convex hull for cluster={cluster_label} of slide {slide_submitter_id}"
+                    )
+    elif method == "individual":
         out = []
         for c in cell_types:
-                cluster_col = f"{c}_label"
-                for cluster_label in slide_data[cluster_col].unique():
-                        slide_cluster = slide_data.loc[
-                                (slide_data[cluster_col] == cluster_label), ["Coord_X", "Coord_Y"]
-                        ].to_numpy()
-                        try:
-                                real_tile_size = tile_size - overlap
-                                ch = ConvexHull(slide_cluster)
-                                area = len(slide_cluster) * (real_tile_size**2)
-                                convex_area = ch.volume
-                                convex_perimeter = ch.area
-                                solidity = area / convex_area
-                                roundness = (4 * area * math.pi) / (convex_perimeter**2)
+            cluster_col = f"{c}_label"
+            for cluster_label in slide_data[cluster_col].unique():
+                slide_cluster = slide_data.loc[
+                    (slide_data[cluster_col] == cluster_label), ["Coord_X", "Coord_Y"]
+                ].to_numpy()
+                try:
+                    real_tile_size = tile_size - overlap
+                    ch = ConvexHull(slide_cluster)
+                    area = len(slide_cluster) * (real_tile_size**2)
+                    convex_area = ch.volume
+                    convex_perimeter = ch.area
+                    solidity = area / convex_area
+                    roundness = (4 * area * math.pi) / (convex_perimeter**2)
 
-                                # If ConvexHull is smaller than actual shape, fix at 1.
-                                solidity = (solidity * (solidity <= 1)) or 1
-                                roundness = (roundness * (roundness <= 1)) or 1
+                    # If ConvexHull is smaller than actual shape, fix at 1.
+                    solidity = (solidity * (solidity <= 1)) or 1
+                    roundness = (roundness * (roundness <= 1)) or 1
 
-                                out.append(
-                                        [
-                                        slide_submitter_id,
-                                        cluster_label,
-                                        c,
-                                        solidity,
-                                        roundness,
-                                        ]
-                                )
-                        # trunk-ignore(flake8/E722)
-                        except:
-                                print(f"Failed to create a convex hull for cluster={cluster_label} of slide {slide_submitter_id}")
+                    out.append(
+                        [
+                            slide_submitter_id,
+                            cluster_label,
+                            c,
+                            solidity,
+                            roundness,
+                        ]
+                    )
+                # trunk-ignore(flake8/E722)
+                except:
+                    print(
+                        f"Failed to create a convex hull for cluster={cluster_label} of slide {slide_submitter_id}"
+                    )
 
     if len(out) > 0:
         return pd.DataFrame(
@@ -786,7 +794,7 @@ def simulate_assigning_cell_type_positions(
     """
     np.random.seed(seed=seed)
     if cell_types is None:
-        cell_types =DEFAULT_CELL_TYPES
+        cell_types = DEFAULT_CELL_TYPES
 
     # Setup
     total_per_type = cell_type_assignments[cell_types].sum(axis=0)
@@ -887,7 +895,13 @@ def compute_effect_size(true_mean_nd, sims_nd_df, slide_submitter_id, cell_types
     )
 
 
-def node_degree_wrapper(graph, predictions, slide_submitter_id, cell_types=None, keep_example_simulations=True):
+def node_degree_wrapper(
+    graph,
+    predictions,
+    slide_submitter_id,
+    cell_types=None,
+    keep_example_simulations=True,
+):
     """
     Compute Effect size based on difference between true node degree and node degree computed from simulated slides.
 
@@ -908,16 +922,22 @@ def node_degree_wrapper(graph, predictions, slide_submitter_id, cell_types=None,
     if cell_types is None:
         cell_types = DEFAULT_CELL_TYPES
 
-    slide_data =utils.get_slide_data(predictions, slide_submitter_id)
+    slide_data = utils.get_slide_data(predictions, slide_submitter_id)
     cell_type_assignments = utils.assign_cell_types(slide_data, cell_types=cell_types)
-    center_neighbor_pairs = sorted(list(itertools.permutations(cell_types, 2)) + list(zip(cell_types, cell_types)))
+    center_neighbor_pairs = sorted(
+        list(itertools.permutations(cell_types, 2)) + list(zip(cell_types, cell_types))
+    )
     mean_nd = []
 
     # Compute true node degree
-    node_degree_original = compute_node_degree(graph, cell_type_assignments, cell_types=cell_types)
-    if (len(node_degree_original) > 0):
+    node_degree_original = compute_node_degree(
+        graph, cell_type_assignments, cell_types=cell_types
+    )
+    if len(node_degree_original) > 0:
         # Simulate slides and compute their node degrees
-        node_degree_sim = simulate_assigning_cell_type_positions(graph, cell_type_assignments, cell_types=cell_types)
+        node_degree_sim = simulate_assigning_cell_type_positions(
+            graph, cell_type_assignments, cell_types=cell_types
+        )
 
         # Add slide submitter id
         node_degree_sim["slide_submitter_id"] = slide_submitter_id
@@ -931,28 +951,68 @@ def node_degree_wrapper(graph, predictions, slide_submitter_id, cell_types=None,
             for cell_type in cell_types:
                 N_true = int(total_per_type[cell_type])
                 N_false = num_tiles - N_true
-                pool = N_true * [True] +  N_false * [False]
-                assigned_tiles[cell_type] = np.random.choice(pool, replace=False, size=num_tiles)
+                pool = N_true * [True] + N_false * [False]
+                assigned_tiles[cell_type] = np.random.choice(
+                    pool, replace=False, size=num_tiles
+                )
 
             assigned_tiles = pd.DataFrame(assigned_tiles)
             assigned_tiles["slide_submitter_id"] = slide_submitter_id
 
         # Comparing node degree means
-        node_degree_original_mean = node_degree_original.groupby(["center", "neighbor"]).mean(numeric_only=True).reset_index()
-        node_degree_sim_mean = node_degree_sim.groupby(["center", "neighbor", "simulation_nr"]).mean(numeric_only=True)["degree"].reset_index()
+        node_degree_original_mean = (
+            node_degree_original.groupby(["center", "neighbor"])
+            .mean(numeric_only=True)
+            .reset_index()
+        )
+        node_degree_sim_mean = (
+            node_degree_sim.groupby(["center", "neighbor", "simulation_nr"])
+            .mean(numeric_only=True)["degree"]
+            .reset_index()
+        )
 
         # Subset the mean node degree per cell type pair
         for center, neighbor in list(center_neighbor_pairs):
-            pair_original = node_degree_original_mean.loc[(node_degree_original_mean["center"] == center) & (node_degree_original_mean["neighbor"] == neighbor), "degree"].to_list()
-            pair_sim = node_degree_sim_mean.loc[(node_degree_sim_mean["center"] == center) & (node_degree_sim_mean["neighbor"] == neighbor), "degree"]
-            if (len(pair_sim) > 0) & (len(pair_original)> 0):
+            pair_original = node_degree_original_mean.loc[
+                (node_degree_original_mean["center"] == center)
+                & (node_degree_original_mean["neighbor"] == neighbor),
+                "degree",
+            ].to_list()
+            pair_sim = node_degree_sim_mean.loc[
+                (node_degree_sim_mean["center"] == center)
+                & (node_degree_sim_mean["neighbor"] == neighbor),
+                "degree",
+            ]
+            if (len(pair_sim) > 0) & (len(pair_original) > 0):
                 # Comparing mean node degrees from simulations (100 values) with the observed mean node degree (single value)
                 # Compute fraction of times the mean node degree from simulations is greater
-                mean_nd.append([slide_submitter_id, center, neighbor,np.mean(pair_sim), np.mean(pair_original)])
+                mean_nd.append(
+                    [
+                        slide_submitter_id,
+                        center,
+                        neighbor,
+                        np.mean(pair_sim),
+                        np.mean(pair_original),
+                    ]
+                )
 
-
-        mean_nd_df = pd.DataFrame(mean_nd, columns=["slide_submitter_id", "center", "neighbor",  "mean_sim", "mean_obs"])
-        node_degree_sim_df = node_degree_sim.groupby(["slide_submitter_id", "center", "neighbor", "simulation_nr"])["degree"].mean().reset_index(name="degree")
+        mean_nd_df = pd.DataFrame(
+            mean_nd,
+            columns=[
+                "slide_submitter_id",
+                "center",
+                "neighbor",
+                "mean_sim",
+                "mean_obs",
+            ],
+        )
+        node_degree_sim_df = (
+            node_degree_sim.groupby(
+                ["slide_submitter_id", "center", "neighbor", "simulation_nr"]
+            )["degree"]
+            .mean()
+            .reset_index(name="degree")
+        )
 
         if keep_example_simulations:
             return [assigned_tiles, node_degree_sim_df, mean_nd_df]

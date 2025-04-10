@@ -1,4 +1,4 @@
-include { GENERATE_GRAPHS                          } from '../../../modules/local/generate_graphs/generategraphs.nf'
+// include { GENERATE_GRAPHS                          } from '../../../modules/local/generate_graphs/main.nf'
 include { COMPUTE_CONNECTEDNESS                    } from '../../../modules/local/compute_connectedness/main.nf'
 include { COMPUTE_COLOCALIZATION                   } from '../../../modules/local/compute_colocalization/main.nf'
 include { COMPUTE_NODE_DEGREE_WITH_ES              } from '../../../modules/local/compute_node_degree_with_es/main.nf'
@@ -22,57 +22,53 @@ workflow COMPUTE_GRAPH_BASED_FEATURES {
     graphs
 
     main:
-
-    GENERATE_GRAPHS(
-        tile_level_cell_type_quantification,
-        params.out_prefix,
-        params.slide_type,
-    )
-
+    ch_input = tile_level_cell_type_quantification.combine(cell_types).combine(graphs)
+    ch_versions = Channel.empty()
     COMPUTE_CONNECTEDNESS(
-        tile_level_cell_type_quantification,
-        cell_types,
-        graphs,
+        ch_input,
         params.abundance_threshold,
         params.slide_type,
         params.out_prefix,
     )
+    ch_versions = ch_versions.mix(COMPUTE_CONNECTEDNESS.out.versions)
 
     COMPUTE_COLOCALIZATION(
-        tile_level_cell_type_quantification,
-        cell_types,
-        graphs,
+        ch_input,
         params.abundance_threshold,
         params.slide_type,
         params.out_prefix,
     )
+    ch_versions = ch_versions.mix(COMPUTE_COLOCALIZATION.out.versions)
 
     COMPUTE_NODE_DEGREE_WITH_ES(
-        tile_level_cell_type_quantification,
-        params.cell_types,
-        graphs,
+        ch_input,
         params.shapiro_alpha,
         params.slide_type,
         params.out_prefix,
     )
 
+    ch_versions = ch_versions.mix(COMPUTE_NODE_DEGREE_WITH_ES.out.versions)
+
     COMPUTE_N_SHORTEST_PATHS_WITH_MAX_LENGTH(
-        tile_level_cell_type_quantification,
-        cell_types,
-        graphs,
+        ch_input,
         params.cutoff_path_length,
         params.slide_type,
         params.out_prefix,
     )
+    ch_versions = ch_versions.mix(COMPUTE_N_SHORTEST_PATHS_WITH_MAX_LENGTH.out.versions)
 
     COMBINE_NETWORK_FEATURES(
-        COMPUTE_CONNECTEDNESS.out.csv,
-        COMPUTE_N_SHORTEST_PATHS_WITH_MAX_LENGTH.out.csv,
-        COMPUTE_COLOCALIZATION.out.csv,
+        COMPUTE_CONNECTEDNESS.out.csv.combine(
+            COMPUTE_N_SHORTEST_PATHS_WITH_MAX_LENGTH.out.csv
+        ).combine(
+            COMPUTE_COLOCALIZATION.out.csv
+        ),
         params.slide_type,
         params.out_prefix,
     )
+    ch_versions = ch_versions.mix(COMBINE_NETWORK_FEATURES.out.versions)
 
     emit:
-    csv = COMBINE_NETWORK_FEATURES.out.csv
+    csv      = COMBINE_NETWORK_FEATURES.out.csv
+    versions = ch_versions
 }

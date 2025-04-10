@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #  Module imports
 import argparse
+import logging
 import multiprocessing
 import os
 import time
@@ -17,7 +18,7 @@ import model.preprocessing as preprocessing
 import model.utils as utils
 import numpy as np
 import pandas as pd
-from sklearn import linear_model, metrics
+import utils.nf_utils as nf
 from sklearn.model_selection import GridSearchCV, GroupKFold
 from sklearn.preprocessing import StandardScaler
 
@@ -107,8 +108,14 @@ def get_args():
         help="Split level of slides for creating splits",
         default="sample_submitter_id",
     )
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
 
-    parser.add_argument("--version", action="version", version="0.1.0")
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
     # Ensure type is correct
@@ -167,6 +174,7 @@ def nested_cv_multitask(
         Returns:
             _type_:
     """
+    logging.info("Set up hyperparameter grid...")
     # Hyperparameter grid for tuning
     alphas = np.logspace(int(alpha_min), int(alpha_max), int(n_steps))
     scoring = meval.custom_spearmanr
@@ -181,6 +189,7 @@ def nested_cv_multitask(
         "CD8 T cells (quanTIseq)",
         "Immune score",
     ]
+    logging.info("Load transcriptomics features (target features)...")
 
     # Load computed transcriptomics features
     target_features = pd.read_csv(
@@ -190,6 +199,7 @@ def nested_cv_multitask(
     )
 
     # Load bottleneck features
+    logging.info("Load bottleneck features...")
     if Path(bottleneck_features_path).suffix == ".txt":
         # FF slides
         bottleneck_features = pd.read_csv(
@@ -205,6 +215,7 @@ def nested_cv_multitask(
     metadata_colnames = var_names["tile_IDs"] + var_names["IDs"] + var_names[category]
 
     # Preprocessing
+    logging.info("Preprocess data...")
     IDs = ["sample_submitter_id", "slide_submitter_id"]
     merged_data = preprocessing.clean_data(
         bottleneck_features, target_features.loc[:, target_vars + IDs], slide_type
@@ -214,6 +225,7 @@ def nested_cv_multitask(
         total_tile_selection, metadata_colnames, var_names[category]
     )
 
+    logging.info("Setup TF learning...")
     # TF learning
     # Create variables for storing
     model_learned = dict.fromkeys(range(n_outerfolds))
@@ -234,12 +246,13 @@ def nested_cv_multitask(
     slides_spearman_train = {}
     slides_spearman_test = {}
 
-    print("Feature matrix dimensions [tiles, features]:", X.shape)
-    print("Response matrix dimensions:", Y.shape)
+    logging.info("Feature matrix dimensions [tiles, features]:", X.shape)
+    logging.info("Response matrix dimensions:", Y.shape)
 
     # Run nested cross-validation
+    logging.info("Start nested cross-validation...")
     for outerfold in range(n_outerfolds):
-        print(f"Outerfold {outerfold}")
+        logging.info(f"Outerfold {outerfold}")
         train_index, test_index = cv_outer_splits[outerfold]
         x_train, x_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = Y.iloc[train_index], Y.iloc[test_index]
@@ -301,7 +314,6 @@ def nested_cv_multitask(
         x_train_scaler[outerfold] = scaler_x
         y_train_scaler[outerfold] = scaler_y
         model_learned[outerfold] = grid
-
     return (
         cv_outer_splits,
         total_tile_selection,
@@ -316,6 +328,9 @@ def nested_cv_multitask(
 
 
 def main(args):
+    # Setup logging
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(message)s")
+
     (
         cv_outer_splits,
         total_tile_selection,
@@ -361,10 +376,17 @@ def main(args):
         tiles_spearman_test, Path(args.output_dir, "outer_scores_tiles_test.pkl")
     )
 
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["dask", "joblib", "pandas", "scikit-learn", "numpy"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
+
 
 if __name__ == "__main__":
     args = get_args()
     st = time.time()
     main(args)
     rt = time.time() - st
-    print(f"Script finished in {rt // 60:.0f}m {rt % 60:.0f}s")
+    logging.info(f"Script finished in {rt // 60:.0f}m {rt % 60:.0f}s")

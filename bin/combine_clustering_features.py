@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-import os
-import pandas as pd
 import argparse
+import os
+import time
 from argparse import ArgumentParser as AP
 from os.path import abspath
-import time
 from pathlib import Path
+
+import pandas as pd
+import utils.nf_utils as nf
 
 
 def get_args():
@@ -36,7 +38,13 @@ def get_args():
     parser.add_argument(
         "--prox_indiv_schc_combined_wide", type=str, help="Path to csv", default=""
     )
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
 
@@ -81,6 +89,13 @@ def main(args):
     ).to_csv(
         Path(args.output_dir, f"{args.prefix}_clustering_features.csv"), index=False
     )
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["pandas"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ import joblib
 import pandas as pd
 from joblib import Parallel, delayed
 from model.constants import DEFAULT_CELL_TYPES
-
+import utils.nf_utils as nf
 
 def get_args():
     # Script description
@@ -61,7 +61,13 @@ def get_args():
     parser.add_argument(
         "--n_cores", type=int, help="Number of cores to use (parallelization)"
     )
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+            "--nf-process-id",
+            type=str,
+            help="Nextflow process ID",
+            default=None,
+            dest="nf_process_id",
+        )
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
 
@@ -148,7 +154,7 @@ def compute_connectedness(
         index=["slide_submitter_id"], columns="cell_type"
     )["type_spec_frac"]
     new_cols = [
-        f'LCC {col.replace("_", " ")} clusters'
+        f"LCC {col.replace('_', ' ')} clusters"
         for col in all_largest_cc_sizes_wide.columns
     ]
     all_largest_cc_sizes_wide.columns = new_cols
@@ -173,6 +179,13 @@ def main(args):
 
     if args.graphs_path is None:
         joblib.dump(all_graphs, Path(args.output_dir, f"{args.prefix}_graphs.pkl"))
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["joblib", "pandas", "networkx", "numpy", "scipy", "scikit-learn"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

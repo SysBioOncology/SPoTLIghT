@@ -83,8 +83,9 @@ def compute_tile_predictions(
     """
 
     # Check model directory
+    # NOTE with nextlfow is_model_dir should be FALSE
     if (
-        models_dir.find(cell_type) != -1 or is_model_dir
+        models_dir.find(cell_type) != -1 or not is_model_dir
     ):  # models_dir = folder for specific cell type
         full_model_path = models_dir
         print(full_model_path)

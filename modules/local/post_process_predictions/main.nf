@@ -14,25 +14,30 @@ process POST_PROCESS_PREDICTIONS {
 
     output:
     path out_prefix, emit: txt_parquet
-    path "ok.txt"
+    path "versions.yml", emit: versions
 
     script:
+    def args = task.ext.args ?: ''
+
     out_prefix = determine_out_prefix(slide_type)
     """
 
-    post_process_predictions.py \
+    post_process_predictions.py ${args} \\
+        --nf-process-id ${task.process} \\
         --slide_type ${slide_type} \
         --path_codebook "${path_codebook}" \
         --cancer_type ${cancer_type} \
         --pred_train_file ${pred_train_file} \
-        --path_tissue_classes "${path_tissue_classes}" && touch \$PWD/ok.txt
+        --path_tissue_classes "${path_tissue_classes}"
+
     """
 
     stub:
     out_prefix = determine_out_prefix(slide_type)
     """
     touch ${out_prefix}
-    touch "ok.txt"
+    touch "versions.yml"
+
     """
 }
 def determine_out_prefix(slide_type) {

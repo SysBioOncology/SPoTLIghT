@@ -27,9 +27,12 @@ workflow SPOTLIGHT {
 
     main:
     ch_versions = Channel.empty()
-
     ch_var_names = params.var_names_path ? Channel.fromPath(params.var_names_path) : Channel.empty()
-    ch_celltype_models = params.celltype_models_path ? Channel.fromPath(params.celltype_models_path) : Channel.empty()
+    ch_celltype_models = params.celltype_models_path ? Channel.fromFilePairs("${file(params.celltype_models_path)}/**/{outer_models,x_train_scaler}.pkl", relative: false, type: 'file').map { _empty, pkl -> [pkl[0].getParent().name, pkl] } : Channel.empty()
+    ch_bottleneck_features = params.bottleneck_features_path ? Channel.fromPath(params.bottleneck_features_path, type: params.slide_type == "FFPE" ? 'dir' : 'file') : Channel.empty()
+    ch_tile_level_celltype_predictions = params.tile_level_celltype_predictions ? Channel.fromPath(params.tile_level_celltype_predictions, type: "file") : Channel.empty()
+
+
     // Get spotlight modules to run
     def spotlight_modules = params.spotlight_modules ? params.spotlight_modules.split(',').collect { it.trim().toLowerCase() } : []
 
@@ -37,6 +40,7 @@ workflow SPOTLIGHT {
         EXTRACT_HISTOPATHO_FEATURES()
         ch_bottleneck_features = EXTRACT_HISTOPATHO_FEATURES.out.features
         ch_clinical_file = EXTRACT_HISTOPATHO_FEATURES.out.clinical_file
+        ch_versions = ch_versions.mix(EXTRACT_HISTOPATHO_FEATURES.out.versions)
     }
 
     if (spotlight_modules.contains("deconvbulk") | spotlight_modules.contains("buildmodel")) {
@@ -44,6 +48,7 @@ workflow SPOTLIGHT {
         DECONVOLUTE_BULKRNASEQ()
         ch_immune_deconv = DECONVOLUTE_BULKRNASEQ.out.immune_deconv
         ch_tpm = DECONVOLUTE_BULKRNASEQ.out.tpm
+        ch_versions = ch_versions.mix(DECONVOLUTE_BULKRNASEQ.out.versions)
     }
 
     if (spotlight_modules.contains("buildmodel")) {
@@ -56,6 +61,7 @@ workflow SPOTLIGHT {
 
         ch_var_names = BUILD_MULTITASK_CELLTYPE_MODELS.out.var_names
         ch_celltype_models = BUILD_MULTITASK_CELLTYPE_MODELS.out.models
+        ch_versions = ch_versions.mix(BUILD_MULTITASK_CELLTYPE_MODELS.out.versions)
     }
 
     if (spotlight_modules.contains('predicttiles')) {
@@ -65,15 +71,15 @@ workflow SPOTLIGHT {
             ch_celltype_models,
             ch_var_names,
         )
-        ch_tile_level_celltype_predictions = PREDICT_TILE_LEVEL_CELL_TYPE_ABUNDANCES.out.proba
+        ch_tile_level_celltype_predictions = PREDICT_TILE_LEVEL_CELL_TYPE_ABUNDANCES.out.csv
+        ch_versions = ch_versions.mix(PREDICT_TILE_LEVEL_CELL_TYPE_ABUNDANCES.out.versions)
     }
 
     if (spotlight_modules.contains('computespatial')) {
         COMPUTE_SPATIAL_FEATURES(
-            ch_tile_level_celltype_predictions,
-            params.out_prefix,
-            params.slide_type,
+            ch_tile_level_celltype_predictions
         )
+        ch_versions = ch_versions.mix(COMPUTE_SPATIAL_FEATURES.out.versions)
     }
 
     //

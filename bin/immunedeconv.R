@@ -34,19 +34,22 @@ parser$add_argument(
     default = "assets/mcp_counter/genes.txt",
     help = "Path to genes.txt"
 )
-args <- parser$parse_args()
+# TODO to be replaced later with built-in function in GaitiLabUtils
+parser$add_argument(
+    "--nf-process-id",
+    dest = "nf_process_id",
+    type = "character",
+    help = "Task ID from Nextflow, only needed in Nextflow pipeline",
+    default = NULL
+)
 
-# args <- list()
-# args$tpm_path <- "output_test_tcga/create/tpm.txt"
-# args$probesets <- "assets/mcp_counter/probesets.txt"
-# args$genes <- "assets/mcp_counter/genes.txt"
-# args$output_dir <- "/Users/joankant/Desktop/gaitigroup/Users/Joan/spotlight_docker/output_test_tcga/immunedeconv"
+params <- parser$parse_args()
 
 # # Set up logging
-logr <- init_logging(log_level = args$log_level)
+logr <- init_logging(log_level = params$log_level)
 
 log_info("Create output directory...")
-GaitiLabUtils::create_dir(args$output_dir)
+GaitiLabUtils::create_dir(params$output_dir)
 
 log_info(getwd())
 log_info(list.files(getwd()))
@@ -58,7 +61,7 @@ log_info(list.files(getwd()))
 
 log_info("Load tpm data")
 tpm <- data.table::fread(
-    args$tpm_path,
+    params$tpm_path,
     check.names = FALSE,
     sep = "\t",
     header = TRUE,
@@ -66,10 +69,10 @@ tpm <- data.table::fread(
     data.frame(row.names = 1) %>%
     data.matrix()
 
-create_dir(args$output_dir)
+create_dir(params$output_dir)
 
 ## 1) quanTIseq
-if (args$tool == "quantiseq") {
+if (params$tool == "quantiseq") {
     log_info("Running quanTIseq...")
     tpm_quantiseq <- tpm
     rownames(tpm_quantiseq) <- toupper(rownames(tpm_quantiseq))
@@ -84,20 +87,20 @@ if (args$tool == "quantiseq") {
 
     write.csv(
         cell_fractions,
-        file.path(args$output_dir, "quantiseq.csv"),
+        file.path(params$output_dir, "quantiseq.csv"),
         row.names = TRUE
     )
-} else if (args$tool == "mcp_counter") {
+} else if (params$tool == "mcp_counter") {
     ## 2) MCP Counter
     log_info("Running MCP Counter...")
     user_probesets <- read.table(
-        args$probesets,
+        params$probesets,
         sep = "\t",
         stringsAsFactors = FALSE,
         colClasses = "character"
     )
     user_genesets <- read.table(
-        args$genes,
+        params$genes,
         sep = "\t",
         stringsAsFactors = FALSE,
         header = TRUE,
@@ -115,10 +118,10 @@ if (args$tool == "quantiseq") {
 
     write.csv(
         cell_fractions,
-        file.path(args$output_dir, "mcp_counter.csv"),
+        file.path(params$output_dir, "mcp_counter.csv"),
         row.names = TRUE
     )
-} else if (args$tool == "xcell") {
+} else if (params$tool == "xcell") {
     ## 3) XCell
     log_info("Running XCell...")
     cell_fractions <- immunedeconv::deconvolute(tpm, "xcell") %>%
@@ -126,10 +129,10 @@ if (args$tool == "quantiseq") {
 
     write.csv(
         cell_fractions,
-        file.path(args$output_dir, "xcell.csv"),
+        file.path(params$output_dir, "xcell.csv"),
         row.names = TRUE
     )
-} else if (args$tool == "epic") {
+} else if (params$tool == "epic") {
     ## 4) EPIC
     log_info("Running EPIC...")
     cell_fractions <- immunedeconv::deconvolute_epic(
@@ -140,7 +143,7 @@ if (args$tool == "quantiseq") {
 
     write.csv(
         cell_fractions,
-        file.path(args$output_dir, "epic.csv"),
+        file.path(params$output_dir, "epic.csv"),
         row.names = TRUE
     )
 } else {
@@ -149,4 +152,17 @@ if (args$tool == "quantiseq") {
     )
 }
 
-log_info("COMPLETED!")
+log_info("Finished!")
+
+# log_info("Session Info")
+# log_object(sessionInfo())
+
+
+if (!is.null(params$nf_process_id)) {
+    write_versions_yml(
+        c(pacman::p_loaded(), "immunedeconv"),
+        task_id =params$nf_process_id,
+        outdir = params$output_dir
+    )
+}
+

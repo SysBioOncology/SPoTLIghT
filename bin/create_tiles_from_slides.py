@@ -10,6 +10,7 @@ from pathlib import Path
 import DL.image as im
 import numpy as np
 import tiffslide as openslide
+import utils.nf_utils as nf
 from PIL import Image
 
 
@@ -32,7 +33,13 @@ def get_args():
     parser.add_argument(
         "--gradient_mag_filter", help="Threshold for filtering", default=20
     )
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
 
@@ -112,7 +119,14 @@ def main(args):
             optimize=True,
             quality=94,
         )
-        # Check if all tiles were saved
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["pillow", "tiffslide", "numpy", "opencv-python"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
+
+    # Check if all tiles were saved
     assert len(glob.glob1(Path(args.output_dir), "*.jpg")) == n_tiles
 
 

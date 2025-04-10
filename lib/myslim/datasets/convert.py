@@ -2,6 +2,7 @@ import argparse
 import math
 import os
 import sys
+
 import pandas as pd
 
 # trunk-ignore(flake8/E402)
@@ -38,8 +39,6 @@ def _get_dataset_filename(output_dir, split_name, shard_id, NUM_SHARDS):
 
 
 def _convert_dataset(split_name, filenames, tps, Qs, classids, output_dir, NUM_SHARDS):
-    sys.path.append(os.path.dirname(os.getcwd()))
-
     from myslim.datasets import dataset_utils
 
     """Converts the given filenames to a TFRecord dataset.
@@ -58,7 +57,6 @@ def _convert_dataset(split_name, filenames, tps, Qs, classids, output_dir, NUM_S
         image_reader = ImageReader()
 
         with tf.Session("") as sess:
-
             for shard_id in range(NUM_SHARDS):
                 output_filename = _get_dataset_filename(
                     output_dir, split_name, shard_id, NUM_SHARDS

@@ -1,5 +1,4 @@
 import multiprocessing
-import sys
 
 NUM_CORES = multiprocessing.cpu_count()
 METADATA_COLS = [

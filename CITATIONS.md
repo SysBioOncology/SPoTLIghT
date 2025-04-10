@@ -10,6 +10,30 @@
 
 ## Pipeline tools
 
+- [PC-CHiP](https://github.com/gerstung-lab/PC-CHiP)
+
+    > Fu, Y., Jung, A.W., Torne, R.V. et al. Pan-cancer computational histopathology reveals mutations, tumor composition and prognosis. Nat Cancer 1, 800–810 (2020). https://doi.org/10.1038/s43018-020-0085-8
+
+- [immunedeconv](https://github.com/omnideconv/immunedeconv)
+
+    > Sturm, G., Finotello, F., Petitprez, F., Zhang, J. D., Baumbach, J., Fridman, W. H., ..., List, M., Aneichyk, T. (2019). Comprehensive evaluation of transcriptome-based cell-type quantification methods for immuno-oncology. Bioinformatics, 35(14), i436-i445. https://doi.org/10.1093/bioinformatics/btz363 
+
+- [EPIC](https://gfellerlab.shinyapps.io/EPIC_1-1/)
+  
+  > Racle, J., de Jonge, K., Baumgaertner, P., Speiser, D. E., & Gfeller, D. (2017). Simultaneous enumeration of cancer and immune cell types from bulk tumor gene expression data. ELife, 6, e26476. https://doi.org/10.7554/eLife.26476
+
+- [quanTIseq](http://icbi.at/software/quantiseq/doc/index.html)
+
+    > Finotello, F., Mayer, C., Plattner, C. et al. Molecular and pharmacological modulators of the tumor immune contexture revealed by deconvolution of RNA-seq data. Genome Med 11, 34 (2019). https://doi.org/10.1186/s13073-019-0638-6
+
+- [MCPCounter](https://github.com/ebecht/MCPcounter)
+
+> Becht, E., Giraldo, N.A., Lacroix, L. et al. Estimating the population abundance of tissue-infiltrating immune and stromal cell populations using gene expression. Genome Biol 17, 218 (2016). https://doi.org/10.1186/s13059-016-1070-5
+
+- [xCell](http://xcell.ucsf.edu/)
+
+> Aran, D., Hu, Z., & Butte, A. J. (2017). xCell: digitally portraying the tissue cellular heterogeneity landscape. Genome Biology, 18(1), 220. https://doi.org/10.1186/s13059-017-1349-1
+
 ## Software packaging/containerisation tools
 
 - [Anaconda](https://anaconda.com)

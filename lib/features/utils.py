@@ -1,15 +1,13 @@
+import itertools
+
+import numpy as np
 import pandas as pd
 import scipy.stats as stats
-import itertools
-import sys
-import os
-from scipy.stats import pearsonr, spearmanr
-import numpy as np
-
-sys.path.append(f"{os.path.dirname(os.getcwd())}/Python/libs")
 
 # Own modules
 from model.constants import *
+from scipy.stats import pearsonr
+
 
 def get_slide_data(data, slide_submitter_id):
     """
@@ -117,7 +115,7 @@ def compute_correlations(df1, df2, corr_method="pearson"):
                 temp = pd.merge(df1[r], df2[c], left_index=True, right_index=True)
                 temp[temp < -1e300] = np.nan
                 temp = temp.dropna()
-                if len(temp) >=25:
+                if len(temp) >= 25:
                     if corr_method == "spearman":
                         pvalues[r][c] = spearmanr(temp[r].values, temp[c].values)[1]
                         corr_coefs[r][c] = spearmanr(temp[r].values, temp[c].values)[0]

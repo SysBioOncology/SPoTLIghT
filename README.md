@@ -1,58 +1,80 @@
-# eduatilab/spotlight
+# SysBioOncology/SPoTLIghT
 
-[![GitHub Actions CI Status](https://github.com/eduatilab/spotlight/actions/workflows/ci.yml/badge.svg)](https://github.com/eduatilab/spotlight/actions/workflows/ci.yml)
-[![GitHub Actions Linting Status](https://github.com/eduatilab/spotlight/actions/workflows/linting.yml/badge.svg)](https://github.com/eduatilab/spotlight/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
-[![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
-
-[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)
-[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
-[![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
-[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
-[![Launch on Seqera Platform](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Seqera%20Platform-%234256e7)](https://cloud.seqera.io/launch?pipeline=https://github.com/eduatilab/spotlight)
+[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
 
 ## Introduction
 
-**eduatilab/spotlight** is a bioinformatics pipeline that ...
+Our pipeline, SPoTLIghT, as presented in our [paper](https://www.nature.com/articles/s41698-024-00749-w), can be used to derive spatial graph-based interpretable features from H&E slides and is available as a Nextflow pipeline.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+The pipeline comprises the following modules:
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
+1. Extracting histopathological features
+2. Deconvolution of bulkRNAseq data
+3. Building a multi-task cell type model to predict cell type abundances on a tile-level
+4. Predicting tile-level cell type abundances using the multi-task models
+5. Compute spatial features using the tile-level cell type abundances
+
+> The training of the cell type models have been perfomed using fresh frozen (FF) slides for the TCGA-SKCM dataset (melanoma) as described in the paper. The trained models are provided [here](assets/TF_models).
+
+See also the figures below.
+
+![Workflow part 1](src/spotlight_a.jpg)
+![Workflow part 2](src/spotlight_b.jpg)
 
 ## Usage
+
+### Software
+
+- Docker version 28.0.4, build b8034c0
+- Apptainer version 1.0.
+- Nextflow version 24.10.5 build 5935
+
+> These were the versions used for testing the pipeline.
 
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
+1. Create apptainer/singularity containers from Docker images
 
-First, prepare a samplesheet with your input data that looks as follows:
+```sh
+# Easiest route (internet access needed)
+apptainer build spotlight.sif docker://joank23/spotlight
+apptainer build immunedeconvr.sif docker://joank23/immunedeconvr
 
-`samplesheet.csv`:
+# Alternative route
+# Usecase: if working on an HPC that does not have docker & internet access for building the image
 
-```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+# A) on you local desktop
+# 1. save docker as tar or tar.gz (compressed)
+docker save joank23/spotlight > spotlight.tar
+docker save joank23/immunedeconvr > immunedeconvr.tar
+
+# 2. Move to HPC (optionally)
+# 3. Build apptainer images (.sif) from docker (.tar) 
+apptainer build spotlight.sif docker-archive:spotlight.tar
+apptainer build immunedeconvr.sif docker-archive:immunedeconvr.tar
+
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
+2. Download retrained models to extract the histopathological features, available from Fu et al., Nat Cancer, 2020
+   1. Download from ([Retrained_Inception_v4](https://www.ebi.ac.uk/biostudies/bioimages/studies/S-BSST292))
+   2. Unzip the folder
+   3. Extract the files to a folder called `Retrained_Inception_v4`.
 
--->
+> IMPORTANT: Please rename your images file names, so they only include "-", to follow the same sample coding used by the TCGA.
 
 Now, you can run the pipeline using:
 
 <!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
+Since the SKCM multi-task models are provided, the ['example_workflow_params.yml'](assets/example_workflow_params.yml) can be used to predict the cell type abundances for other H&E images and optionally to compute the spatial features.  
+
+For more information see [examples](docs/skcm_examples.md).
+
 ```bash
-nextflow run eduatilab/spotlight \
+nextflow run SysBioOncology/SPoTLIghT \
    -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
+   -params-file assets/example_workflow_params.yml \
    --outdir <OUTDIR>
 ```
 
@@ -61,11 +83,7 @@ nextflow run eduatilab/spotlight \
 
 ## Credits
 
-eduatilab/spotlight was originally written by Joan Kant.
-
-We thank the following people for their extensive assistance in the development of this pipeline:
-
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+SysBioOncology/SPoTLIghT was originally written by Joan Kant, Óscar Lapuente-Santana & Federica Eduati.
 
 ## Contributions and Support
 
@@ -73,8 +91,7 @@ If you would like to contribute to this pipeline, please see the [contributing g
 
 ## Citations
 
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use eduatilab/spotlight for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+Lapuente-Santana, Ó., Kant, J. & Eduati, F. Integrating histopathology and transcriptomics for spatial tumor microenvironment profiling in a melanoma case study. npj Precis. Onc. 8, 254 (2024). <https://doi.org/10.1038/s41698-024-00749-w>
 
 <!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
 

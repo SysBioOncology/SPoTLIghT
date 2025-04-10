@@ -18,34 +18,30 @@ workflow PREDICT_TILE_LEVEL_CELL_TYPE_ABUNDANCES {
     var_names_path
 
     main:
-    ch_cell_types_path = params.cell_types_path ? Channel.fromPath(params.cell_types_path) : Channel.empty()
-
-
+    ch_versions = Channel.empty()
     PREDICT_TILE_LEVEL_CELL_TYPE_ABUNDANCE(
-        features_input,
-        celltype_models,
-        var_names_path,
+        celltype_models.combine(features_input).combine(var_names_path),
         params.prediction_mode,
-        ch_cell_types_path,
         params.n_outerfolds,
         params.slide_type,
         params.is_model_dir,
     )
-    ch_tile_level_celltype_predictions = PREDICT_TILE_LEVEL_CELL_TYPE_ABUNDANCE.out.csv.collect()
+    ch_tile_level_celltype_predictions = PREDICT_TILE_LEVEL_CELL_TYPE_ABUNDANCE.out.csv.collect().map { csv -> [csv] }
+    ch_versions = ch_versions.mix(PREDICT_TILE_LEVEL_CELL_TYPE_ABUNDANCE.out.versions)
 
 
     COMBINE_TILE_LEVEL_CELLTYPE_ABUNDANCE(
-        features_input,
-        ch_tile_level_celltype_predictions,
-        var_names_path,
+        ch_tile_level_celltype_predictions.combine(features_input).combine(var_names_path),
         params.prediction_mode,
-        ch_cell_types_path,
         params.n_outerfolds,
         params.slide_type,
     )
 
+    ch_versions = ch_versions.mix(COMBINE_TILE_LEVEL_CELLTYPE_ABUNDANCE.out.versions)
+
     ch_target_features = COMBINE_TILE_LEVEL_CELLTYPE_ABUNDANCE.out.proba_csv.collect()
 
     emit:
-    proba = ch_target_features
+    csv      = ch_target_features
+    versions = ch_versions
 }

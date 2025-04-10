@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import glob
 import os
 import time
 from argparse import ArgumentParser as AP
@@ -9,6 +8,7 @@ from pathlib import Path
 import dask.dataframe as dd
 import joblib
 import pandas as pd
+import utils.nf_utils as nf
 from model.evaluate import compute_tile_predictions
 
 
@@ -74,30 +74,19 @@ def get_args():
 
     parser.add_argument(
         "--is_model_dir",
-        help="Indicate whether `model_dir` is a directory for a single cell type model",
-        type=int,
-        default=True,
+        action="store_true",
+        help="Indicate whether `model_dir` is a directory for a single cell type model (default='False')",
+    )
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
     )
 
+    parser.set_defaults(is_model_dir=False)
     arg = parser.parse_args()
-
-    if arg.features_input is None:
-        if arg.slide_type == "FF":
-            arg.features_input = Path(arg.histopatho_features_dir, "features.txt")
-
-        elif arg.slide_type == "FFPE":
-            parquet_files = glob.glob1("", "*.parquet")
-            if len(parquet_files) > 0:
-                if not (os.path.isdir("features_format_parquet")):
-                    os.mkdir("features_format_parquet")
-                for parquet_file in parquet_files:
-                    os.replace(
-                        parquet_file, Path("features_format_parquet", parquet_file)
-                    )
-
-            arg.features_input = Path(
-                arg.histopatho_features_dir, "features_format_parquet"
-            )
 
     if not Path(arg.features_input).exists():
         raise Exception(
@@ -222,6 +211,13 @@ def main(args):
         # index=False,
     )
     print("Finished tile predictions...")
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["pandas", "joblib", "dask", "scipy"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

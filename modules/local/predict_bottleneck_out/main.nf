@@ -17,17 +17,21 @@ process PREDICT_BOTTLENECK_OUT {
     output:
     path "${bot_out_filename}.txt", emit: bot_txt
     path "${pred_out_filename}.txt", emit: pred_txt
-    path "ok.txt"
+    path "versions.yml", emit: versions
 
     script:
+    def args = task.ext.args ?: ''
     """
-    bottleneck_predict.py \
+    bottleneck_predict.py ${args} \\
+        --nf_process_id ${task.process} \\
         --num_classes=42 \
         --bot_out ${bot_out_filename}.txt \
         --pred_out ${pred_out_filename}.txt \
         --model_name ${model_name} \
         --checkpoint_path ${checkpoint_path} \
-        --file_dir \$PWD/ && touch \$PWD/ok.txt
+        --file_dir \$PWD/
+    
+
 
     """
 
@@ -35,6 +39,6 @@ process PREDICT_BOTTLENECK_OUT {
     """
     touch ${bot_out_filename}.txt
     touch ${pred_out_filename}.txt
-    touch ok.txt
+    touch versions.yml
     """
 }

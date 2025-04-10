@@ -9,23 +9,27 @@ process POST_PROCESS_FEATURES {
 
     output:
     path out_prefix, emit: txt_parquet
-    path "ok.txt"
+    path "versions.yml", emit: versions
 
     script:
-    is_tcga_numeric = is_tcga ? 1 : 0
+    def args = task.ext.args ?: ''
+
+    def is_tcga_arg = is_tcga ? "--is_tcga" : ""
     out_prefix = determine_out_prefix(slide_type)
     """
-    post_process_features.py \
+    post_process_features.py ${args} \\
+        --nf-process-id ${task.process} \\
         --bot_train_file ${bot_train_file} \
         --slide_type ${slide_type} \
-        --is_tcga ${is_tcga_numeric} && touch ok.txt
+        ${is_tcga_arg}
     """
 
     stub:
     out_prefix = determine_out_prefix(slide_type)
     """
     touch ${out_prefix}
-    touch ok.txt
+    touch "versions.yml"
+
     """
 }
 def determine_out_prefix(slide_type) {

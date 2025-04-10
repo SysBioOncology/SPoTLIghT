@@ -1,23 +1,29 @@
 process CREATE_TPM_MATRIX {
     label 'rcontainer'
 
-    input: 
-        path gene_exp_path
+    input:
+    path gene_exp_path
 
     output:
-        path "tpm.txt", emit: txt
+    path "tpm.txt", emit: txt
+    path "versions.yml", emit: versions
 
-    // Run only if 'params.is_tpm'
-    when: (task.ext.when || task.ext.when == null) && (gene_exp_path.name != "NO_FILE")
+    when:
+    (task.ext.when || task.ext.when == null) && (gene_exp_path.name != "NO_FILE")
 
-    script: 
+    script:
+    def args = task.ext.args ?: ''
     """
 
-    /usr/local/bin/_entrypoint.sh Rscript ${projectDir}/bin/create_tpm_matrix.R --gene_exp_path ${gene_exp_path}
+    create_tpm_matrix.R \\
+    --gene_exp_path ${gene_exp_path} ${args} \\
+    --nf-process-id ${task.process}
     """
 
-    stub: 
+    stub:
     """
     touch tpm.txt
+    touch "versions.yml"
+
     """
 }

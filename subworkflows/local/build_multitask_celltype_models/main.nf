@@ -1,4 +1,4 @@
-include { PREPROCESSING_MULTITASK_MODEL_TARGET_FEATURES } from '../../../modules/local/preprocessing_multitask_model_target_features/preprocessingmultitaskmodeltargetfeatures.nf'
+include { PREPROCESSING_MULTITASK_MODEL_TARGET_FEATURES } from '../../../modules/local/preprocessing_multitask_model_target_features/main.nf'
 include { BUILD_MULTITASK_CELLTYPE_MODEL                } from '../../../modules/local/build_multitask_celltype_model/main.nf'
 // //
 // // Subworkflow with functionality specific to the SysBioOncology/spotlight_docker pipeline
@@ -62,7 +62,7 @@ workflow BUILD_MULTITASK_CELLTYPE_MODELS {
     // Close channels
     ch_var_names = PREPROCESSING_MULTITASK_MODEL_TARGET_FEATURES.out.pkl.collect()
     ch_target_features = PREPROCESSING_MULTITASK_MODEL_TARGET_FEATURES.out.csv.collect()
-
+    ch_versions = ch_versions.mix(PREPROCESSING_MULTITASK_MODEL_TARGET_FEATURES.out.versions)
 
 
     BUILD_MULTITASK_CELLTYPE_MODEL(
@@ -78,7 +78,7 @@ workflow BUILD_MULTITASK_CELLTYPE_MODELS {
         params.split_level,
         params.slide_type,
     )
-
+    ch_versions = ch_versions.mix(BUILD_MULTITASK_CELLTYPE_MODEL.out.versions)
     ch_models = BUILD_MULTITASK_CELLTYPE_MODEL.out.pkl.map { it ->
         [it[0].getParent().name, it]
     }
@@ -86,4 +86,5 @@ workflow BUILD_MULTITASK_CELLTYPE_MODELS {
     emit:
     var_names = ch_var_names
     models    = ch_models
+    versions  = ch_versions
 }

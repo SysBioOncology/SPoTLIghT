@@ -7,6 +7,7 @@ from os.path import abspath
 from pathlib import Path
 
 import pandas as pd
+import utils.nf_utils as nf
 
 
 def get_args():
@@ -31,7 +32,13 @@ def get_args():
         required=False,
         default="",
     )
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
 
@@ -80,7 +87,7 @@ def compute_proximity_from_indiv_schc_combine(prox_within, prox_between):
         index=["slide_submitter_id"], columns=["pair (comparison)"]
     )["proximity"]
     new_cols = [
-        f'prox CC {col.replace("_", " ")}'
+        f"prox CC {col.replace('_', ' ')}"
         for col in prox_indiv_schc_combined_wide.columns
     ]
     prox_indiv_schc_combined_wide.columns = new_cols
@@ -96,6 +103,13 @@ def main(args):
         sep="\t",
         index=False,
     )
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["pandas"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

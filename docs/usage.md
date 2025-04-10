@@ -1,4 +1,4 @@
-# eduatilab/spotlight: Usage
+# SysBioOncology/SPoTLIghT: Usage
 
 > _Documentation of pipeline parameters is generated automatically from the pipeline schema and can no longer be found in markdown files._
 
@@ -22,158 +22,23 @@ spotlight_modules: "extracthistopatho, deconvbulk, buildmodel, predicttiles, com
 
 > When running only a subset of modules, set the parameters required for those modules!
 
-### Extracting histopathological features
-
-Input files:
-
-* `clinical_file_out_file` :
-* `image_dir` : Directory with H&E images.
-* `path_codebook` : Path to [codebook.txt](https://github.com/gerstung-lab/PC-CHiP/blob/b5ff01b56dbad9a5880529cdcf5e799e912534a2/inception/codebook.txt)
-* `checkpoint_path`: checkpoints of DL model, see the Tensorflow repository [tensorflow/models](https://github.com/tensorflow/models/tree/master/research/slim#Pretrained). Checkpoint used in manuscript can be downloaded via this [link](https://www.ebi.ac.uk/biostudies/files/S-BSST292/Retrained_Inception_v4.zip) and can be found here: <https://www.ebi.ac.uk/biostudies/bioimages/studies/S-BSST292>. Of note, the path should point to the **directory** with the checkpoint files.
-* `path_tissue_classes`: Path to [tissue_classes.csv](assets/tissue_classes.csv), which is provided.
-
-* `tumor_purity_threshold` : Minimum tumor purity for a slide to be kept (default=80)
-* `gradient_mag_filter` : Minimum gradient magnitude, used for filtering non-informative and/or blurry tiles (default=10)
-* `n_shards` : number of shards for creating TFrecords (default=320)
-* `bot_out_filename` : Filename for extracted histopathological features (default="bot_train")
-* `pred_out_filename` : Filename for predictions (default="pred_train")
-* `model_name` : Name of model used, ensure this corresponds to the model of the checkpoints (default="inception_v4")
-
-### Deconvolution of bulkRNAseq data
-
-* `gene_exp_path`: Path to gene expression file (`.txt`)
-* `is_tpm`: Indicate whether given `gene_exp_path` is TPM normalized (default=false)
-
-* `quantiseq_path`: Path to results quanTIseq (`.csv`)
-* `epic_path`: Path to results EPIC (`.csv`)
-* `mcp_counter_path`: Path to results MCP counter (`.csv`)
-* `xcell_path`: Path to results xCELL (`.csv`)
-
-> The above four files are optional, by default all tools will be run. If results for one or more tools have been generated already, please set the paths.
-
-### Building a multi-task cell type model to predict cell type abundances on a tile-level
-
-#### Set up
-
-1. Download TCGA bulkRNAseq data via the [Firehose Tool](https://gdac.broadinstitute.org) from the BROAD Institute, the files required are: “illuminahiseq_rnaseqv2-RSEM_genes”.
-2. Unzip the downloaded file (.tar.gz)
-3. Download the signatures/published scores, see table below.
-
-| Parameter                    | Reference                                                   | Additional info                                                                                                                                                  |
-| ---------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `absolute_tumor_purity_path` | <https://gdc.cancer.gov/about-data/publications/panimmune>  | Download the 'Score for 160 Genes Signatures in Tumor Samples' or use [direct link]( https://api.gdc.cancer.gov/data/80a82092-161d-4615-9d96-e858f113618d)       |
-| `estimate_scores_path`       | <https://bioinformatics.mdanderson.org/estimate/index.html> | Download the relevant file for the cancer type of interest, use the RNA-seqV2 column on the page.                                                                |
-| `gibbons_scores_path`        | <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5503821/>     | Download the 'Supp Datafile S1.' or use the [direct link](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5503821/bin/NIHMS840944-supplement-Supp_Datafile_S1.xlsx) |
-| `thorsson_scores_path`       | <https://gdc.cancer.gov/about-data/publications/panimmune>  | Download the 'ABSOLUTE purity/ploidy file', or use [direct link](https://api.gdc.cancer.gov/data/4f277128-f793-4354-a13d-30cc7fe9f6b5)                           |
-
-4. Update the `nf-params.yml` for the following parameters: `thorsson_scores_path`,     `estimate_scores_path`,  `absolute_tumor_purity_path` and `gibbons_scores_path`.
-5. Review other parameters relevant for this module in the same `yml` file. (see section below)
-6. Run the pipeline, do not forget to include `buildmodel` in the `spotlight_modules` parameter.
-
-#### Parameters
-
-* `clinical_file_path`: Path to clinical file (`.csv`), at least have the following columns: 'sample_submitter_id' and 'slide_submitter_id'. If **module `extracthistopatho`** is run, setting this parameter is **optional**.
-
-**Publicly available scores**
-
-* `thorsson_scores_path`: "assets/local/Thorsson_Scores_160_Signatures.tsv"
-* `estimate_scores_path`: "assets/local/ESTIMATE.xlsx"
-* `absolute_tumor_purity_path`: "assets/local/TCGA_ABSOLUTE.txt"
-* `gibbons_scores_path`: "assets/local/Gibbons.xlsx"
-For more information please see the table in [modules/trainmultitaskmodel.md](./modules/trainmultitaskmodel.md)
-
-* `bottleneck_features_path`: Path to extracted histopathological features, generated by **module `extracthistopatho`**
-* `var_names_path`: "assets/task_selection_names.pkl"
-* `target_features_path`: "assets/NO_FILE"
-* `model_cell_types`: String of cell types for which a multi-task models has to be build (default="CAFs, Endothelial_cells, T_cells, tumor_purity").
-
-> Please note, that models can only be build for the cell types mentioned in the default.
-
-**Setup nested cross-validation**
-
-* `alpha_min`: Min. value for grid, 10^alpha_min (default=-4)
-* `alpha_max`: Max. value for grid, 10^alpha_max (default=-1)
-* `n_steps`: Number of steps in grid (default=40)
-* `n_outerfolds`: Number of outer folds (default=5)
-* `n_innerfolds`: Number of inner folds(default=10)
-* `n_tiles`: Number of tiles selected per slide (default=50)
-* `split_level`: Variable to split data on (default="sample_submitter_id")
-
-### Predicting tile-level cell type abundances using the multi-task models
-
-* `celltype_models_path`: Path to directory with the models for each cell type, where each cell type has to have its own folder. For an example of the structure see provided models [assets/TF_models/SKCM_FF](../assets/TF_models/SKCM_FF)  (default="assets/TF_models/SKCM_FF")
-`prediction_mode` : (default="test")
-
-### Compute spatial features using the tile-level cell type abundances
-
-* `out_prefix`: "dummy"
-
-* `graphs_path`: Path to file (`.pkl`) with the graphs for all slides. Not required, if left default or if not set, this will be generated.
-* `abundance_threshold` : Min. abundance (probability) for assigning cell type (default=0.5)
-* `shapiro_alpha` : Significance level for shapiro test (normality) (default=0.05)
-* `cutoff_path_length` : Max. path length (default=2)
-
-* `n_clusters` : Number of clusters to generate (default = 8)
-* `max_dist` : "dummy"
-* `max_n_tiles_threshold` : 2
-* `tile_size` : Size of tiles in pixels (default=512)
-* `overlap` : Overlap of directly neighboring tiles (default=50)
-
-* `metadata_path` : Path to file with metadata
-* `merge_var` : Variable for merging metadata and spatial features, (default="slide_submitter_id")
-* `sheet_name` : If `metadata_path` points to an Excel file, give the 'sheet_name' to read from.
-
-## Samplesheet input
-
-You will need to create a samplesheet with information about the samples you would like to analyse before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row as shown in the examples below.
-
-```bash
---input '[path to samplesheet file]'
-```
-
-### Multiple runs of the same sample
-
-The `sample` identifiers have to be the same when you have re-sequenced the same sample more than once e.g. to increase sequencing depth. The pipeline will concatenate the raw reads before performing any downstream analysis. Below is an example for the same sample sequenced across 3 lanes:
-
-```csv title="samplesheet.csv"
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-CONTROL_REP1,AEG588A1_S1_L003_R1_001.fastq.gz,AEG588A1_S1_L003_R2_001.fastq.gz
-CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz
-```
-
-### Full samplesheet
-
-The pipeline will auto-detect whether a sample is single- or paired-end using the information provided in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below.
-
-A final samplesheet file consisting of both single- and paired-end data may look something like the one below. This is for 6 samples, where `TREATMENT_REP3` has been sequenced twice.
-
-```csv title="samplesheet.csv"
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-CONTROL_REP2,AEG588A2_S2_L002_R1_001.fastq.gz,AEG588A2_S2_L002_R2_001.fastq.gz
-CONTROL_REP3,AEG588A3_S3_L002_R1_001.fastq.gz,AEG588A3_S3_L002_R2_001.fastq.gz
-TREATMENT_REP1,AEG588A4_S4_L003_R1_001.fastq.gz,
-TREATMENT_REP2,AEG588A5_S5_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L004_R1_001.fastq.gz,
-```
-
-| Column    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample`  | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
-| `fastq_1` | Full path to FastQ file for Illumina short reads 1. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
-| `fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
-
-An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
-
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run eduatilab/spotlight --input ./samplesheet.csv --outdir ./results  -profile docker
+nextflow run SysBioOncology/SPoTLIghT --params-file <your-param-file> --outdir ./results  -profile docker
 ```
+
+with:
+
+```yaml title="params.yaml"
+input: './samplesheet.csv'
+outdir: './results/'
+<...>
+```
+
+You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
 
@@ -193,35 +58,20 @@ Pipeline settings can be provided in a `yaml` or `json` file via `-params-file <
 > [!WARNING]
 > Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources), other infrastructural tweaks (such as output directories), or module arguments (args).
 
-The above pipeline run specified with a params file in yaml format:
-
-```bash
-nextflow run eduatilab/spotlight -profile docker -params-file params.yaml
-```
-
-with:
-
-```yaml title="params.yaml"
-input: './samplesheet.csv'
-outdir: './results/'
-<...>
-```
-
-You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
 
 ### Updating the pipeline
 
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
 
 ```bash
-nextflow pull eduatilab/spotlight
+nextflow pull SysBioOncology/SPoTLIghT
 ```
 
 ### Reproducibility
 
 It is a good idea to specify the pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your pipeline. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
 
-First, go to the [eduatilab/spotlight releases page](https://github.com/eduatilab/spotlight/releases) and find the latest pipeline version - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`. Of course, you can switch to another version by changing the number after the `-r` flag.
+First, go to the [SysBioOncology/SPoTLIghT releases page](https://github.com/SysBioOncology/SPoTLIghT/releases) and find the latest pipeline version - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`. Of course, you can switch to another version by changing the number after the `-r` flag.
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future.
 

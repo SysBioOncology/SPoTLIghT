@@ -1,4 +1,5 @@
 process IMMUNEDECONV {
+    tag "${tool}"
     label 'rcontainer'
 
     input:
@@ -6,10 +7,13 @@ process IMMUNEDECONV {
 
     output:
     tuple val(tool), path("${tool}.csv"), emit: csv
+    path "versions.yml", emit: versions
 
     script:
+    def args = task.ext.args ?: ''
     """
-    immunedeconv.R \\
+    immunedeconv.R ${args} \\
+        --nf-process-id ${task.process} \\
         --tpm_path ${tpm_path} \\
         --tool ${tool} \\
         --probesets ${mcp_probesets} \\
@@ -19,5 +23,7 @@ process IMMUNEDECONV {
     stub:
     """
     touch "${tool}.csv"
+    touch "versions.yml"
+
     """
 }

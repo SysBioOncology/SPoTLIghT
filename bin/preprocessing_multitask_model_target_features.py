@@ -2,19 +2,16 @@
 import argparse
 import multiprocessing
 import os
-import sys
 import time
 from argparse import ArgumentParser as AP
 from os.path import abspath
 from pathlib import Path
 
-# TEMPORARY
-sys.path.append("/cluster/projects/gaitigroup/Users/Joan/spotlight_docker/lib")
-
 import joblib
 import model.preprocessing as preprocessing
 import numpy as np
 import pandas as pd
+import utils.nf_utils as nf
 from model.constants import (
     CAFS,
     ENDOTHELIAL_CELLS,
@@ -126,7 +123,13 @@ def get_args():
         help="Path to EPIC results",
     )
 
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
 
@@ -415,11 +418,17 @@ def main(args):
     tasks.to_csv(Path(args.output_dir, "ensembled_selected_tasks.csv"), sep="\t")
     joblib.dump(var_dict, Path(args.output_dir, "task_selection_names.pkl"))
 
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["joblib", "numpy", "pandas"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
+
 
 if __name__ == "__main__":
     args = get_args()
     st = time.time()
     main(args)
     rt = time.time() - st
-    print(f"Script finished in {rt // 60:.0f}m {rt % 60:.0f}s")
     print(f"Script finished in {rt // 60:.0f}m {rt % 60:.0f}s")
