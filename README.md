@@ -46,6 +46,8 @@ apptainer build immunedeconvr.sif docker://joank23/immunedeconvr
 
 # A) on you local desktop
 # 1. save docker as tar or tar.gz (compressed)
+docker pull joank23/spotlight
+docker pull joank23/immunedeconvr
 docker save joank23/spotlight > spotlight.tar
 docker save joank23/immunedeconvr > immunedeconvr.tar
 
