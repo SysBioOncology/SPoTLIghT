@@ -66,10 +66,10 @@ apptainer build immunedeconvr.sif docker-archive:immunedeconvr.tar
 
 ```bash
 # Assuming you're in the cloned/forked GitHub repo
-nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> -params-file <path-to-params-yml> -outdir "output-tcga-skcm-ff"
+nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> -params-file <path-to-params-yml> --outdir "output-tcga-skcm-ff"
 ```
 
-> Note you can change `-outdir` and you can add additional profiles (-profile).
+> Note you can change `--outdir` and you can add additional profiles (-profile).
 
 ## FFPE slides
 
@@ -82,10 +82,10 @@ nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> 
 
 ```bash
 # Assuming you're in the cloned/forked GitHub repo
-nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> -params-file <path-to-params-yml> -outdir "output-tcga-skcm-ffpe"
+nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> -params-file <path-to-params-yml> --outdir "output-tcga-skcm-ffpe"
 ```
 
-> Note you can change `-outdir` and you can add additional profiles (-profile).
+> Note you can change `--outdir` and you can add additional profiles (-profile).
 
 ## CPTAC melanoma cohort
 
@@ -98,9 +98,9 @@ nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> 
 
 ```bash
 # Assuming you're in the cloned/forked GitHub repo
-nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> -params-file <path-to-params-yml> -outdir "output-cptac"
+nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> -params-file <path-to-params-yml> --outdir "output-cptac"
 ```
-> Note you can change `-outdir` and you can add additional profiles (-profile). 
+> Note you can change `--outdir` and you can add additional profiles (-profile). 
 
 ## Xenium melanoma datasets from 10x Genomics
 
@@ -115,7 +115,7 @@ nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> 
 
 ```bash
 # Assuming you're in the cloned/forked GitHub repo
-nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> -params-file <path-to-params-yml> -outdir "output-xenium"
+nextflow run SysBioOncology/SPoTLIghT -profile apptainer -c <path-to-nf-config> -params-file <path-to-params-yml> --outdir "output-xenium"
 ```
 
-> Note you can change `-outdir` and you can add additional profiles (-profile). 
+> Note you can change `--outdir` and you can add additional profiles (-profile). 

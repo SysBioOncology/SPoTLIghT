@@ -52,7 +52,7 @@ apptainer build immunedeconvr.sif docker-archive:immunedeconvr.tar
 
 ```bash
 # Assuming you're in the cloned/forked GitHub repo
-nextflow run ${PWD} -profile apptainer -c "nf-custom.config" -params-file assets/examples/nf-params-buildmodel.yml -outdir "output-tcga-model"
+nextflow run ${PWD} -profile apptainer -c "nf-custom.config" -params-file assets/examples/nf-params-buildmodel.yml --outdir "output-tcga-model"
 ```
 
 > Please rename your images file names, so they only include "-", to follow the same sample coding used by the TCGA.
