@@ -1,5 +1,5 @@
 //
-// Subworkflow with functionality specific to the eduatilab/spotlight pipeline
+// Subworkflow with functionality specific to the SysBioOncology/SPoTLIghT pipeline
 //
 
 /*

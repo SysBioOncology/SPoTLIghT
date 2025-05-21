@@ -1,4 +1,4 @@
-# eduatilab/spotlight: Output
+# SysBioOncology/SPoTLIghT: Output
 
 ## Introduction
 
@@ -16,7 +16,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 ### Pipeline information
 
-- [eduatilab/spotlight: Output](#eduatilabspotlight-output)
+- [SysBioOncology/SPoTLIghT: Output](#eduatilabspotlight-output)
   - [Introduction](#introduction)
   - [Pipeline overview](#pipeline-overview)
     - [Pipeline information](#pipeline-information)
