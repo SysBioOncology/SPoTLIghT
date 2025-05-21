@@ -157,12 +157,10 @@ log_info("Finished!")
 # log_info("Session Info")
 # log_object(sessionInfo())
 
-
 if (!is.null(params$nf_process_id)) {
     write_versions_yml(
         c(pacman::p_loaded(), "immunedeconv"),
-        task_id =params$nf_process_id,
+        task_id = params$nf_process_id,
         outdir = params$output_dir
     )
 }
-

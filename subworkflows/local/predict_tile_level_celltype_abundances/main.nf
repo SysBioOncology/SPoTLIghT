@@ -1,7 +1,7 @@
 include { COMBINE_TILE_LEVEL_CELLTYPE_ABUNDANCE  } from '../../../modules/local/combine_tile_level_celltype_abundance/main.nf'
 include { PREDICT_TILE_LEVEL_CELL_TYPE_ABUNDANCE } from '../../../modules/local/predict_tile_level_celltype_abundance/main.nf'
 //
-// Subworkflow with functionality specific to the SysBioOncology/spotlight_docker pipeline
+// Subworkflow with functionality specific to the SysBioOncology/SPoTLIghT pipeline
 //
 
 /*

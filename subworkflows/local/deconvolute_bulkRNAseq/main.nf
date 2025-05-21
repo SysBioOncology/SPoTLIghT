@@ -6,7 +6,7 @@ include { IMMUNEDECONV as MCP_COUNTER } from '../../../modules/local/immunedecon
 include { IMMUNEDECONV                } from '../../../modules/local/immunedeconv/main.nf'
 
 //
-// Subworkflow with functionality specific to the SysBioOncology/spotlight_docker pipeline
+// Subworkflow with functionality specific to the SysBioOncology/SPoTLIghT pipeline
 //
 
 /*

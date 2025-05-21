@@ -7,7 +7,7 @@ include { PREDICT_BOTTLENECK_OUT     } from '../../../modules/local/predict_bott
 include { POST_PROCESS_FEATURES      } from '../../../modules/local/post_process_features/main.nf'
 include { POST_PROCESS_PREDICTIONS   } from '../../../modules/local/post_process_predictions/main.nf'
 //
-// Subworkflow with functionality specific to the SysBioOncology/spotlight_docker pipeline
+// Subworkflow with functionality specific to the SysBioOncology/SPoTLIghT pipeline
 //
 
 /*

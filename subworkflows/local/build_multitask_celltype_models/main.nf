@@ -1,7 +1,7 @@
 include { PREPROCESSING_MULTITASK_MODEL_TARGET_FEATURES } from '../../../modules/local/preprocessing_multitask_model_target_features/main.nf'
 include { BUILD_MULTITASK_CELLTYPE_MODEL                } from '../../../modules/local/build_multitask_celltype_model/main.nf'
 // //
-// // Subworkflow with functionality specific to the SysBioOncology/spotlight_docker pipeline
+// // Subworkflow with functionality specific to the SysBioOncology/SPoTLIghT pipeline
 // //
 
 // /*
