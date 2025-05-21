@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import utils.nf_utils as nf
 
 
 def get_args():
@@ -68,7 +69,13 @@ def get_args():
         type=int,
     )
 
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
 
@@ -235,6 +242,13 @@ def main(args):
         index=False,
         sep="\t",
     )
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["numpy", "pandas"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

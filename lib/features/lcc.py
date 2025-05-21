@@ -1,19 +1,10 @@
-import sys
-import os
-import argparse
-from argparse import ArgumentParser as AP
 import networkx as nx
 import pandas as pd
-import time
-from os.path import abspath
+from model.constants import DEFAULT_CELL_TYPES
 
 # Own modules
 import features.features as features
 import features.utils as utils
-from model.constants import DEFAULT_CELL_TYPES
-
-# Point to folder with custom imports
-sys.path.append(f"{os.path.dirname(os.getcwd())}/Python/libs")
 
 # def get_args():
 #     # Script description
@@ -35,8 +26,9 @@ sys.path.append(f"{os.path.dirname(os.getcwd())}/Python/libs")
 #     arg.output = abspath(arg.output)
 #     return arg
 
+
 def determine_lcc(graph, cell_type_assignments, cell_types=None):
-    """ Determine the fraction of the largest connected component (LCC) of a
+    """Determine the fraction of the largest connected component (LCC) of a
     cell type w.r.t. to all nodes (tiles) of that cell type.
     1. Determine the number of nodes N in the LCC for the probability map of a
     cell type.
@@ -71,12 +63,12 @@ def determine_lcc(graph, cell_type_assignments, cell_types=None):
 def lcc_wrapper(id, slide_data, predictions, graph, cell_types, abundance_threshold):
     slide_data = utils.get_slide_data(predictions, id)
     node_cell_types = utils.assign_cell_types(
-        slide_data=slide_data, cell_types=cell_types, threshold=abundance_threshold)
+        slide_data=slide_data, cell_types=cell_types, threshold=abundance_threshold
+    )
     lcc = features.determine_lcc(
         graph=graph, cell_type_assignments=node_cell_types, cell_types=cell_types
     )
     lcc["slide_submitter_id"] = id
-
 
 
 # def main(args):
@@ -90,4 +82,3 @@ def lcc_wrapper(id, slide_data, predictions, graph, cell_types, abundance_thresh
 #     main(args)
 #     rt = time.time() - st
 #     print(f"Script finished in {rt // 60:.0f}m {rt % 60:.0f}s")
-

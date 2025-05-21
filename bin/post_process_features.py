@@ -7,10 +7,9 @@ from os.path import abspath
 from pathlib import Path
 
 import dask.dataframe as dd
-
-
 import DL.utils as utils
 import pandas as pd
+import utils.nf_utils as nf
 
 
 def get_args():
@@ -29,14 +28,22 @@ def get_args():
     parser.add_argument(
         "--create_parquet_subdir",
         help="Whether to create a subdirectory called 'features_format_parquet' if slide_type == 'FFPE', default=False",
-        default=False,
+        action="store_true",
     )
     parser.add_argument("--slide_type", help="Type of tissue slide (FF or FFPE)")
     parser.add_argument(
-        "--is_tcga", help="Is TCGA dataset, default=False", type=int, default=0
+        "--is_tcga", help="Is TCGA dataset (default='False')", action="store_true"
     )
+
     parser.add_argument("--bot_train_file", type=str, default=None, help="Txt file")
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
+    parser.set_defaults(is_tcga=False, create_parquet_subdir=False)
     arg = parser.parse_args()
 
     if arg.bot_train_file is None:
@@ -128,6 +135,13 @@ def main(args):
             path=args.output_dir, compression="gzip", name_function=utils.name_function
         )
     print("Finished post-processing of features...")
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["dask", "pandas"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

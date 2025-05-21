@@ -1,0 +1,30 @@
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##     SysBioOncology/spotlight_docker 1.0dev
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##     This is an example parameter file to pass to the `-params-file` option
+##     of nextflow run with the SysBioOncology/spotlight_docker pipeline.
+##
+##     Uncomment lines with a single '#' if you want to pass the parameter to
+##     the pipeline.
+## -----------------------------------------------------------------------------
+
+## -----------------------------------------------------------------------------
+##    GENERAL OPTIONS
+## -----------------------------------------------------------------------------
+
+spotlight_modules: "extracthistopatho,predicttiles,computespatial"
+cancer_type: "SKCM"
+
+# Change all parameters below accordingly
+slide_type: "FFPE"
+is_tcga: false
+is_tumor: true
+out_prefix: "my_run"
+
+## -----------------------------------------------------------------------------
+##    Extracting histopathological features
+## -----------------------------------------------------------------------------
+
+# Files and directories
+image_dir: "<path-to-image-dir>"
+checkpoint_path: "<path-to-checkpoint/Retrained_Inception_v4/model.ckpt-100000>"

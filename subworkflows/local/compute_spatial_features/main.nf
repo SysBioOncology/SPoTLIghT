@@ -8,189 +8,68 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include {   GENERATE_GRAPHS                             } from '../../../modules/local/generategraphs.nf'
-include {   COMPUTE_CONNECTEDNESS                       } from '../../../modules/local/computeconnectedness.nf'
-include {   COMPUTE_COLOCALIZATION                      } from '../../../modules/local/computecolocalization.nf'
-include {   COMPUTE_NODE_DEGREE_WITH_ES                 } from '../../../modules/local/computenodedegreewithes.nf'
-include {   COMPUTE_N_SHORTEST_PATHS_WITH_MAX_LENGTH    } from '../../../modules/local/computenshortestwithmaxlength.nf'
-include {   CLUSTERING_SCHC_SIMULTANEOUS                } from '../../../modules/local/clusteringschcsimultaneous.nf'
-include {   CLUSTERING_SCHC_INDIVIDUAL                  } from '../../../modules/local/clusteringschcindividual.nf'
-include {   COMPUTE_NCLUSTERS                           } from '../../../modules/local/computenclusters.nf'
-include {   COMPUTE_FRAC_HIGH                           } from '../../../modules/local/computefrachigh.nf'
-include {   COMPUTE_PROXIMITY_FROM_SIMULTANEOUS_SCHC    } from '../../../modules/local/computeproximityfromsimultaneousschc.nf'
-include {   COMPUTE_PROXIMITY_FROM_INDIV_SCHC_BETWEEN   } from '../../../modules/local/computeproximityfromindivschcbetween.nf'
-include {   COMPUTE_PROXIMITY_FROM_INDIV_SCHC_WITHIN    } from '../../../modules/local/computeproximityfromindivschcwithin.nf'
-include {   COMPUTE_PROXIMITY_FROM_INDIV_SCHC_COMBINE   } from '../../../modules/local/computeproximityfromindivschccombine.nf'
-include {   COMBINE_CLUSTERING_FEATURES                 } from '../../../modules/local/combineclusteringfeatures.nf'
-include {   COMBINE_NETWORK_FEATURES                    } from '../../../modules/local/combinenetworkfeatures.nf'
-include {   COMBINE_ALL_SPATIAL_FEATURES                } from '../../../modules/local/combineallspatialfeatures.nf'
+
+include { COMPUTE_GRAPH_BASED_FEATURES } from '../compute_graph_based_features/main.nf'
+include { COMPUTE_CLUSTERING_FEATURES  } from '../compute_clustering_features/main.nf'
+include { COMBINE_ALL_SPATIAL_FEATURES } from '../../../modules/local/combine_all_spatial_features/main.nf'
+include { GENERATE_GRAPHS              } from '../../../modules/local/generate_graphs/main.nf'
 
 workflow COMPUTE_SPATIAL_FEATURES {
     take:
-        tile_level_cell_type_quantification
-        out_prefix
-        slide_type
-        abundance_threshold
-        cell_types
-        shapiro_alpha
-        cutoff_path_length
-        n_clusters
-        max_dist
-        max_n_tiles_threshold
-        tile_size
-        overlap
-        metadata_path
-        is_tcga
-        merge_var
-        sheet_name
+    tile_level_cell_type_quantification
 
     main:
+    ch_versions = Channel.empty()
 
-    GENERATE_GRAPHS(
-        tile_quantification_path = tile_level_cell_type_quantification,
-        out_prefix = out_prefix,
-        slide_type = slide_type
-    )
+    ch_cell_types = params.cell_types_path ? Channel.fromPath(params.cell_types_path) : Channel.of(file("EMPTY"))
+    ch_metadata = params.metadata_path ? Channel.fromPath(params.metadata_path) : Channel.of(file("EMPTY"))
+    ch_sheet_name = params.sheet_name ? Channel.of(params.sheet_name) : Channel.of("EMPTY")
+    ch_out_prefix = params.out_prefix ? Channel.of(params.out_prefix) : Channel.of("EMPTY")
+    def spatialfeatures = params.spatialfeatures ? params.spatialfeatures.split(',').collect { it.trim().toLowerCase() } : []
 
-    COMPUTE_CONNECTEDNESS(
-        tile_quantification_path = tile_level_cell_type_quantification,
-        cell_types = cell_types,
-        graphs_path = GENERATE_GRAPHS.out.pkl,
-        abundance_threshold = abundance_threshold,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
+    ch_graph_based_features = params.graph_based_features ? Channel.fromPath(params.graph_based_features) : Channel.empty()
+    ch_cluster_based_features = params.cluster_based_features ? Channel.fromPath(params.cluster_based_features) : Channel.empty()
+    ch_graphs = params.graphs_path ? Channel.fromPath(params.graphs_path) : Channel.empty()
 
-    COMPUTE_COLOCALIZATION(
-        tile_quantification_path = tile_level_cell_type_quantification,
-        cell_types = cell_types,
-        graphs_path = GENERATE_GRAPHS.out.pkl,
-        abundance_threshold = abundance_threshold,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
+    if (spatialfeatures.contains("graph") | spatialfeatures.contains("cluster")) {
+        GENERATE_GRAPHS(
+            tile_level_cell_type_quantification,
+            ch_out_prefix,
+            params.slide_type,
+        )
+        ch_graphs = GENERATE_GRAPHS.out.pkl
+        ch_versions = ch_versions.mix(GENERATE_GRAPHS.out.versions)
+    }
 
-    COMPUTE_NODE_DEGREE_WITH_ES(
-        tile_quantification_path = tile_level_cell_type_quantification,
-        cell_types = cell_types,
-        graphs_path = GENERATE_GRAPHS.out.pkl,
-        shapiro_alpha = shapiro_alpha,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
+    if (spatialfeatures.contains("graph")) {
+        COMPUTE_GRAPH_BASED_FEATURES(tile_level_cell_type_quantification, ch_cell_types, ch_graphs)
+        ch_graph_based_features = COMPUTE_GRAPH_BASED_FEATURES.out.csv
+        ch_versions = ch_versions.mix(COMPUTE_GRAPH_BASED_FEATURES.out.versions)
+    }
 
-    COMPUTE_N_SHORTEST_PATHS_WITH_MAX_LENGTH(
-        tile_quantification_path = tile_level_cell_type_quantification,
-        cell_types = cell_types,
-        graphs_path = GENERATE_GRAPHS.out.pkl,
-        cutoff_path_length = cutoff_path_length,
-        slide_type = slide_type,
-        out_prefix = out_prefix
+    if (spatialfeatures.contains("cluster")) {
+        COMPUTE_CLUSTERING_FEATURES(
+            tile_level_cell_type_quantification,
+            ch_cell_types,
+            ch_graphs,
+        )
+        ch_cluster_based_features = COMPUTE_CLUSTERING_FEATURES.out.csv
+        ch_versions = ch_versions.mix(COMPUTE_CLUSTERING_FEATURES.out.versions)
+    }
 
-    )
+    if (spatialfeatures.contains("graph") & spatialfeatures.contains("cluster")) {
+        COMBINE_ALL_SPATIAL_FEATURES(
+            ch_graph_based_features.combine(ch_cluster_based_features),
+            ch_metadata,
+            params.is_tcga,
+            params.merge_var,
+            ch_sheet_name,
+            params.slide_type,
+            ch_out_prefix,
+        )
+        ch_versions = ch_versions.mix(COMBINE_ALL_SPATIAL_FEATURES.out.versions)
+    }
 
-    CLUSTERING_SCHC_SIMULTANEOUS(
-        tile_quantification_path = tile_level_cell_type_quantification,
-        cell_types = cell_types,
-        graphs_path = GENERATE_GRAPHS.out.pkl,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-
-    )
-
-    CLUSTERING_SCHC_INDIVIDUAL(
-        tile_quantification_path = tile_level_cell_type_quantification,
-        cell_types = cell_types,
-        graphs_path = GENERATE_GRAPHS.out.pkl,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-
-    )
-
-    COMPUTE_NCLUSTERS(
-        CLUSTERING_SCHC_SIMULTANEOUS.out.csv,
-        cell_types = cell_types,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
-
-    COMPUTE_FRAC_HIGH(
-        CLUSTERING_SCHC_INDIVIDUAL.out.csv,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
-
-    COMPUTE_PROXIMITY_FROM_SIMULTANEOUS_SCHC(
-        CLUSTERING_SCHC_SIMULTANEOUS.out.csv,
-        cell_types = cell_types,
-        n_clusters,
-        max_dist,
-        max_n_tiles_threshold,
-        tile_size,
-        overlap,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
-
-
-    COMPUTE_PROXIMITY_FROM_INDIV_SCHC_WITHIN(
-        CLUSTERING_SCHC_INDIVIDUAL.out.csv,
-        cell_types = cell_types,
-        n_clusters,
-        max_dist,
-        max_n_tiles_threshold,
-        tile_size,
-        overlap,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
-
-
-    COMPUTE_PROXIMITY_FROM_INDIV_SCHC_BETWEEN(
-        CLUSTERING_SCHC_INDIVIDUAL.out.csv,
-        cell_types = cell_types,
-        n_clusters,
-        max_dist,
-        max_n_tiles_threshold,
-        tile_size,
-        overlap,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
-
-    COMPUTE_PROXIMITY_FROM_INDIV_SCHC_COMBINE(
-        prox_between = COMPUTE_PROXIMITY_FROM_INDIV_SCHC_BETWEEN.out.csv,
-        prox_within = COMPUTE_PROXIMITY_FROM_INDIV_SCHC_WITHIN.out.csv,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-
-    )
-
-    COMBINE_CLUSTERING_FEATURES(
-        frac_high_wide = COMPUTE_FRAC_HIGH.out.csv,
-        num_clust_slide_wide = COMPUTE_NCLUSTERS.out.csv,
-        all_prox_df_wide  = COMPUTE_PROXIMITY_FROM_SIMULTANEOUS_SCHC.out.csv,
-        prox_indiv_schc_combined_wide = COMPUTE_PROXIMITY_FROM_INDIV_SCHC_COMBINE.out.csv,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
-
-    COMBINE_NETWORK_FEATURES(
-    all_largest_cc_sizes_wide = COMPUTE_CONNECTEDNESS.out.csv,
-    shortest_paths_wide = COMPUTE_N_SHORTEST_PATHS_WITH_MAX_LENGTH.out.csv,
-    colocalization_wide = COMPUTE_COLOCALIZATION.out.csv,
-    slide_type = slide_type,
-    out_prefix = out_prefix
-    )
-
-    COMBINE_ALL_SPATIAL_FEATURES(
-        graph_features = COMBINE_NETWORK_FEATURES.out.csv,
-        clustering_features = COMBINE_CLUSTERING_FEATURES.out.csv,
-        metadata_path = metadata_path,
-        is_tcga = is_tcga,
-        merge_var = merge_var,
-        sheet_name = sheet_name,
-        slide_type = slide_type,
-        out_prefix = out_prefix
-    )
+    emit:
+    versions = ch_versions
 }

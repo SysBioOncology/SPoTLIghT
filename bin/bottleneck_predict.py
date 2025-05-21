@@ -3,9 +3,10 @@ import os
 import sys
 import time
 
+import nets.nets_factory as nets_factory
 import tensorflow.compat.v1 as tf
 import tf_slim as slim
-from nets import nets_factory
+import utils.nf_utils as nf
 from preprocessing import preprocessing_factory
 
 tf.compat.v1.disable_eager_execution()
@@ -21,6 +22,7 @@ tf.app.flags.DEFINE_string(
 )
 tf.app.flags.DEFINE_integer("eval_image_size", 299, "Eval image size.")
 tf.app.flags.DEFINE_string("file_dir", "../Output/process_train/", "")
+tf.app.flags.DEFINE_string("nf_process_id", None, "NF process id")
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -116,6 +118,13 @@ def main(_):
     fto_bot.close()
     fto_pred.close()
     sess.close()
+
+    if FLAGS.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["tf_slim", "tensorflow"],
+            task_id=FLAGS.nf_process_id,
+            output_dir=FLAGS.file_dir,
+        )
 
 
 if __name__ == "__main__":

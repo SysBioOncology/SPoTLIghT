@@ -56,7 +56,7 @@ def create_grid(slide_data):
 
 
 def get_edges(slide_data):
-    """ Determine the edges by looking at the neighbors
+    """Determine the edges by looking at the neighbors
     Neighbors: adjacent nodes (top, right, bottom, left) + diagonal nodes (top-right, bottom-right etc.) = 8 neighbors (or nodes)
 
     Args:
@@ -75,7 +75,6 @@ def get_edges(slide_data):
             selected_tile = node_grid[i, j]
 
             if ~np.isnan(selected_tile):
-
                 # 1. Direct neighbors
                 top_neighbor = node_grid[i - 1, j]
                 left_neighbor = node_grid[i, j - 1]
@@ -127,10 +126,14 @@ def construct_graph(predictions, slide_submitter_id=None, draw_graph=False):
     """
     if len(predictions.slide_submitter_id.unique()) > 1:
         if slide_submitter_id is None:
-            raise Exception("If slide_submitter_id is not specified then predictions should contain only data for one slide")
+            raise Exception(
+                "If slide_submitter_id is not specified then predictions should contain only data for one slide"
+            )
 
         else:
-            predictions = predictions[predictions.slide_submitter_id == slide_submitter_id]
+            predictions = predictions[
+                predictions.slide_submitter_id == slide_submitter_id
+            ]
     predictions = predictions.reset_index(drop=True)
     nodes = predictions.index
     all_edges = get_edges(predictions)

@@ -9,6 +9,7 @@ from pathlib import Path
 
 import features.features as features
 import pandas as pd
+import utils.nf_utils as nf
 from joblib import Parallel, delayed
 from model.constants import DEFAULT_CELL_TYPES
 
@@ -94,7 +95,14 @@ def get_args():
         "--n_cores", type=int, help="Number of cores to use (parallelization)"
     )
 
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
+
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
 
@@ -210,6 +218,13 @@ def main(args):
         ),
         index=False,
     )
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["joblib", "pandas", "networkx", "numpy", "scipy", "scikit-learn"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

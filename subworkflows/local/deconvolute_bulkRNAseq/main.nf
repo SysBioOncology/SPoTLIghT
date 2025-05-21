@@ -1,3 +1,10 @@
+include { CREATE_TPM_MATRIX           } from '../../../modules/local/create_tpm_matrix/main.nf'
+include { IMMUNEDECONV as QUANTISEQ   } from '../../../modules/local/immunedeconv/main.nf'
+include { IMMUNEDECONV as EPIC        } from '../../../modules/local/immunedeconv/main.nf'
+include { IMMUNEDECONV as XCELL       } from '../../../modules/local/immunedeconv/main.nf'
+include { IMMUNEDECONV as MCP_COUNTER } from '../../../modules/local/immunedeconv/main.nf'
+include { IMMUNEDECONV                } from '../../../modules/local/immunedeconv/main.nf'
+
 //
 // Subworkflow with functionality specific to the SysBioOncology/SPoTLIghT pipeline
 //
@@ -8,51 +15,46 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { CREATE_TPM_MATRIX } from '../../../modules/local/createtpmmatrix.nf'
-include { IMMUNEDECONV as QUANTISEQ } from '../../../modules/local/immunedeconv.nf'
-include { IMMUNEDECONV as MCP_COUNTER } from '../../../modules/local/immunedeconv.nf'
-include { IMMUNEDECONV as XCELL } from '../../../modules/local/immunedeconv.nf'
-include { IMMUNEDECONV as EPIC } from '../../../modules/local/immunedeconv.nf'
-
-workflow CELLTYPE_QUANTIFICATION_BULKRNASEQ {
-    take: 
-    gene_exp_path
-
-    main: 
-    
 
 
-    // CREATE_TPM_MATRIX(gene_exp_path)
-    // tpm_path = is_tpm ? Channel.value(gene_exp_path) : CREATE_TPM_MATRIX.out.txt
-    
-    // // Immune deconvolution
-    // Channel.of(                                 // channel: [tool name, csv]
-    //     ["quantiseq", quantiseq_path],
-    //     ["mcp_counter", mcp_counter_path],
-    //     ["xcell", xcell_path],
-    //     ["epic", epic_path]
-    // )
-    // .branch{
-    //     tool, filepath ->  
-    //     // Tools to run 
-    //     invalid: deconv_tools.contains(tool) && (filepath.name == "NO_FILE")
-    //         return [tool, tpm_path]
-    //     // Tools already used
-    //     valid: true
-    //         return [tool, filepath]
-    // }.set {
-    //     ch_immune_deconv_files
-    // }
+workflow DECONVOLUTE_BULKRNASEQ {
+    main:
 
-    // IMMUNEDECONV (
-    //     ch_immune_deconv_files.invalid
-    // ).collect()
+    ch_versions = Channel.empty()
+    ch_epic = Channel.of(["epic", params.epic_path ? file(params.epic_path) : "empty"])
+    ch_quantiseq = Channel.of(["quantiseq", params.quantiseq_path ? file(params.quantiseq_path) : "empty"])
+    ch_mcp_counter = Channel.of(["mcp_counter", params.mcp_counter_path ? file(params.mcp_counter_path) : "empty"])
+    ch_xcell = Channel.of(["xcell", params.xcell_path ? file(params.xcell_path) : "empty"])
+    // Combine channels
+    ch_deconv = ch_epic.concat(ch_quantiseq, ch_mcp_counter, ch_xcell)
 
+    ch_tpm = params.is_tpm ? Channel.fromPath(params.gene_exp_path) : Channel.empty()
 
-    // emit: 
-    //     tpm_path        = tpm_path
-    //     quantiseq       = QUANTISEQ.out == null ? quantiseq_path : QUANTISEQ.out.csv
-    //     mcp_counter     = MCP_COUNTER.out == null ? mcp_counter_path : MCP_COUNTER.out.csv
-    //     xcell           = XCELL.out == null ? xcell_path : XCELL.out.csv
-    //     epic            = EPIC.out == null ? epic_path : EPIC.out.csv
+    // Helper files
+    ch_mcp_probesets = Channel.fromPath(params.mcp_probesets)
+    ch_mcp_genes = Channel.fromPath(params.mcp_genes)
+
+    ch_tpm.ifEmpty(file(params.gene_exp_path)) | CREATE_TPM_MATRIX
+    ch_tpm = CREATE_TPM_MATRIX.out.txt.collect()
+    ch_versions = ch_versions.mix(CREATE_TPM_MATRIX.out.versions)
+
+    ch_immune_deconv = ch_deconv
+        .combine(ch_tpm)
+        .branch { tool, deconv_path, tpm_path ->
+            invalid: deconv_path == "empty"
+            return [tool, tpm_path]
+            valid: true
+            return [tool, deconv_path]
+        }
+
+    IMMUNEDECONV(
+        ch_immune_deconv.invalid.combine(ch_mcp_probesets).combine(ch_mcp_genes)
+    )
+
+    ch_versions = ch_versions.mix(IMMUNEDECONV.out.versions)
+
+    emit:
+    tpm           = ch_tpm
+    immune_deconv = IMMUNEDECONV.out.csv.mix(ch_immune_deconv.valid)
+    versions      = ch_versions
 }

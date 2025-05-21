@@ -12,6 +12,7 @@ from pathlib import Path
 import DL.utils as utils
 import pandas as pd
 import tiffslide as openslide
+import utils.nf_utils as nf
 
 
 def get_args():
@@ -28,9 +29,20 @@ def get_args():
     parser.add_argument("--tiles_folder", help="Directory with the tiles", default="")
     parser.add_argument("--output_dir", help="Set output folder", default="")
     parser.add_argument("--clin_path", help="Set clinical file path", default="")
-    parser.add_argument("--is_tcga", help="Set output folder", type=int)
+    parser.add_argument(
+        "--is_tcga", help="Is TCGA dataset (default='False')", action="store_true"
+    )
 
-    parser.add_argument("--version", action="version", version="0.1.0")
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
+
+    parser.set_defaults(is_tcga=False)
+
     arg = parser.parse_args()
     arg.output_dir = abspath(arg.output_dir)
 
@@ -72,6 +84,8 @@ def format_tile_data_structure(
     clinical_file.dropna(how="all", inplace=True)
     clinical_file.drop_duplicates(inplace=True)
     clinical_file.drop_duplicates(subset="slide_submitter_id", inplace=True)
+
+    clinical_file.head()
 
     # 2) Determine the paths paths of jpg tiles
     jpg_tile_names = glob.glob1(Path(args.tiles_folder), "*.jpg")
@@ -131,6 +145,12 @@ def main(args):
     print(
         "Finished creating the necessary file for computing the features in the next step"
     )
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["tiffslide", "pandas"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

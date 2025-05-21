@@ -10,6 +10,7 @@ import dask.dataframe as dd
 import DL.utils as utils
 import numpy as np
 import pandas as pd
+import utils.nf_utils as nf
 
 
 def get_args():
@@ -40,6 +41,14 @@ def get_args():
     )
     parser.add_argument("--cancer_type", help="Cancer type", required=True, type=str)
     parser.add_argument("--pred_train_file", help="", type=str, default=None)
+
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
     arg = parser.parse_args()
 
     if arg.pred_train_file is None:
@@ -255,6 +264,13 @@ def main(args):
             path=args.output_dir, compression="gzip", name_function=name_function
         )
     print("Finished post-processing of predictions...")
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            ["numpy", "dask", "pandas"],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
 
 
 if __name__ == "__main__":

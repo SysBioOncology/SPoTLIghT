@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import glob
 import os
 import time
 from argparse import ArgumentParser as AP
@@ -11,6 +10,7 @@ import dask.dataframe as dd
 import joblib
 import pandas as pd
 import scipy.stats as stats
+import utils.nf_utils as nf
 from model.constants import DEFAULT_CELL_TYPES
 
 
@@ -77,26 +77,14 @@ def get_args():
         type=str,
         required=True,
     )
-
+    parser.add_argument(
+        "--nf-process-id",
+        type=str,
+        help="Nextflow process ID",
+        default=None,
+        dest="nf_process_id",
+    )
     arg = parser.parse_args()
-
-    if arg.features_input is None:
-        if arg.slide_type == "FF":
-            arg.features_input = Path(arg.histopatho_features_dir, "features.txt")
-
-        elif arg.slide_type == "FFPE":
-            parquet_files = glob.glob1("", "*.parquet")
-            if len(parquet_files) > 0:
-                if not (os.path.isdir("features_format_parquet")):
-                    os.mkdir("features_format_parquet")
-                for parquet_file in parquet_files:
-                    os.replace(
-                        parquet_file, Path("features_format_parquet", parquet_file)
-                    )
-
-            arg.features_input = Path(
-                arg.histopatho_features_dir, "features_format_parquet"
-            )
 
     if not Path(arg.features_input).exists():
         raise Exception(
@@ -276,6 +264,19 @@ def main(args):
         sep="\t",
         index=False,
     )
+
+    if args.nf_process_id is not None:
+        nf.generate_versions_yml(
+            [
+                "pandas",
+                "dask",
+                "joblib",
+                "scipy",
+            ],
+            task_id=args.nf_process_id,
+            output_dir=args.output_dir,
+        )
+
     print("Finished tile predictions...")
 
 

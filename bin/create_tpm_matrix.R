@@ -1,4 +1,4 @@
-#!/usr/bin/env RScript
+#!/usr/local/bin/_entrypoint.sh Rscript
 # Unload all previously loaded packages + remove previous environment
 rm(list = ls(all = TRUE))
 pacman::p_unload()
@@ -10,25 +10,39 @@ pacman::p_load(glue, data.table, tidyverse, stringr, install = FALSE)
 
 # Define input arguments when running from bash
 parser <- setup_default_argparser(
-    description = "Create TPM matrix", default_output = "."
+    description = "Create TPM matrix",
+    default_output_dir = "."
 )
-parser$add_argument("--gene_exp_path", type = "character", help = "Path to gene expression")
+parser$add_argument(
+    "--gene_exp_path",
+    type = "character",
+    help = "Path to gene expression"
+)
+# TODO to be replaced later with built-in function in GaitiLabUtils
+parser$add_argument(
+    "--nf-process-id",
+    dest = "nf_process_id",
+    type = "character",
+    help = "Task ID from Nextflow, only needed in Nextflow pipeline",
+    default = NULL
+)
 
-args <- parser$parse_args()
+params <- parser$parse_args()
 
 # Set up logging
-logr <- init_logging(log_level = args$log_level)
+logr <- init_logging(log_level = params$log_level)
 
 log_info("Create output directory...")
-GaitiLabUtils::create_dir(args$output_dir)
+GaitiLabUtils::create_dir(params$output_dir)
 
 log_info("Load gene-expression...")
 gene_exp <- data.table::fread(
-    args$gene_exp_path,
+    params$gene_exp_path,
     check.names = FALSE,
     sep = "\t",
     header = TRUE
-) %>% data.frame(row.names = 1)
+) %>%
+    data.frame(row.names = 1)
 
 gene_exp_mat <- gene_exp[, gene_exp["gene_id", ] == "scaled_estimate"]
 gene_exp_mat <- gene_exp_mat[-1, ]
@@ -42,15 +56,33 @@ gene_exp_mat <- gene_exp_mat[genes != "?", ]
 # Convert all columns to numeric data type
 gene_exp_mat <- gene_exp_mat %>%
     mutate_if(is.character, as.numeric) %>%
-    mutate(gene = str_split(rownames(gene_exp_mat), "\\|", simplify = TRUE)[, 1]) %>%
+    mutate(
+        gene = str_split(rownames(gene_exp_mat), "\\|", simplify = TRUE)[, 1]
+    ) %>%
     remove_rownames() %>%
     group_by(gene) %>%
     summarize(across(where(is.numeric), mean))
 
 log_info("Save gene exp...")
-write.table(gene_exp_mat,
-    file = file.path(args$output_dir, "tpm.txt"),
+write.table(
+    gene_exp_mat,
+    file = file.path(params$output_dir, "tpm.txt"),
     row.names = FALSE,
-    col.names = TRUE, sep = "\t"
+    col.names = TRUE,
+    sep = "\t"
 )
-log_info("COMPLETED!")
+
+log_info("Finished")
+
+# TODO uncomment after package update
+# log_info("Session Info")
+# log_object(sessionInfo())
+
+
+if (!is.null(params$nf_process_id)) {
+    write_versions_yml(
+        c(pacman::p_loaded()),
+        task_id = params$nf_process_id,
+        outdir = params$output_dir
+    )
+}

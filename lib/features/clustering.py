@@ -1,15 +1,12 @@
-import sys
-import os
 import networkx as nx
 import pandas as pd
+from model.constants import *
+from model.constants import DEFAULT_CELL_TYPES
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import StandardScaler
 
-# Point to folder with custom imports
-sys.path.append(f"{os.path.dirname(os.getcwd())}/Python/libs")
-
-from model.constants import *
 import features.utils as utils
+
 
 def schc_all(predictions, graph, slide_submitter_id, n_clusters=8, cell_types=None):
     """
@@ -106,9 +103,7 @@ def characterize_clusters(clusters, cell_types=None):
 
     # Determine for each cluster the cell types
     return (
-        clusters.groupby(["slide_submitter_id", "cluster_label"]).mean()[
-            cell_types
-        ]
+        clusters.groupby(["slide_submitter_id", "cluster_label"]).mean()[cell_types]
         > cluster_means
     ).reset_index()
 
@@ -130,12 +125,10 @@ def label_cell_type_map_clusters(clusters, cell_types=None):
         cell_types = DEFAULT_CELL_TYPES
 
     clusters = clusters[
-        [ "slide_submitter_id"]
-        + ["{}_label".format(i) for i in cell_types]
-        + cell_types
+        ["slide_submitter_id"] + ["{}_label".format(i) for i in cell_types] + cell_types
     ]
     clusters_long = clusters.melt(
-        id_vars=[ "slide_submitter_id"] + cell_types,
+        id_vars=["slide_submitter_id"] + cell_types,
         value_vars=["{}_label".format(i) for i in cell_types],
         value_name="cluster_label",
         var_name="cell_type_map",
@@ -146,9 +139,7 @@ def label_cell_type_map_clusters(clusters, cell_types=None):
 
     # Means of each cluster for each cell type for each slide
     slide_means = (
-        clusters_long.groupby(
-            ["slide_submitter_id", "cell_type_map", "cluster_label"]
-        )
+        clusters_long.groupby(["slide_submitter_id", "cell_type_map", "cluster_label"])
         .mean()
         .reset_index()
     )
